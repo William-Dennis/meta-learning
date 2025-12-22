@@ -56,7 +56,7 @@ def train_tuner():
 
     return agent, history_rewards, history_params
 
-from sa_algorithm import rastrigin_2d, run_sa
+from sa_config import rastrigin_2d, run_sa
 
 def visualize_trajectory_evolution(params_history):
     # Checkpoints: 0%, 25%, 50%, 75%, 100%

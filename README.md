@@ -17,11 +17,26 @@ Example: 10,000 SA steps
 
 See [RESULTS_SUMMARY.md](RESULTS_SUMMARY.md) for complete performance analysis.
 
+## 🔧 Switching SA Algorithm Implementations
+
+**All code in this repository uses a single configuration file to select the SA algorithm.**
+
+To switch implementations, simply edit `sa_config.py`:
+
+```python
+# In sa_config.py, change this line:
+ALGORITHM = 'rust_parallel'  # Options: 'python_serial', 'python_parallel', 'rust_serial', 'rust_parallel'
+```
+
+That's it! All scripts (`run_experiment.py`, `run_grid_search.py`, etc.) will automatically use the selected algorithm.
+
 ## Quick Start
 
 ### Option 1: Use Python Implementation (Easy)
 ```bash
 pip install numpy matplotlib torch
+
+# Edit sa_config.py and set: ALGORITHM = 'python_serial'
 python run_experiment.py
 ```
 
@@ -35,6 +50,9 @@ uv pip install numpy matplotlib torch maturin
 
 # Build Rust extension
 maturin develop --release
+
+# Edit sa_config.py and set: ALGORITHM = 'rust_parallel'
+python run_experiment.py
 
 # Run benchmarks
 python comprehensive_benchmark.py
@@ -51,8 +69,10 @@ meta-learning/
 │   ├── python_parallel.py  # Python + multiprocessing
 │   ├── rust_serial.py      # Rust serial (~91x faster)
 │   └── rust_parallel.py    # Rust parallel (~171x faster)
+├── sa_config.py            # Configuration: Switch algorithms here!
 ├── src/lib.rs              # Rust implementation
-├── run_experiment.py       # PPO training
+├── run_experiment.py       # PPO training (uses sa_config)
+├── run_grid_search.py      # Grid search (uses sa_config)
 ├── comprehensive_benchmark.py  # Performance comparison
 ├── RUST_SETUP.md          # Setup guide
 └── RESULTS_SUMMARY.md     # Performance analysis
@@ -91,6 +111,7 @@ See [sa_algorithms/README.md](sa_algorithms/README.md) for details.
 
 ## Key Features
 
+- ✅ **Easy algorithm switching** via single config file
 - ✅ 4 interchangeable SA implementations (Python serial/parallel, Rust serial/parallel)
 - ✅ PPO-based hyperparameter tuning
 - ✅ 91-171x performance improvement with Rust
@@ -108,3 +129,4 @@ See [sa_algorithms/README.md](sa_algorithms/README.md) for details.
 ## License
 
 See [LICENSE](LICENSE) file.
+

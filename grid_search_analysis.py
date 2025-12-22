@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import sqlite3
 import os
-from sa_algorithm import run_sa
+from sa_config import run_sa
 from param_scaling import (
     get_nn_grid, get_param_grid, nn_output_to_param, 
     PARAM_RANGES, NN_MIN, NN_MAX
