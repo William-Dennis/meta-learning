@@ -1,0 +1,56 @@
+"""
+Rust Serial Implementation of Simulated Annealing
+
+Wrapper for the Rust serial implementation via PyO3 bindings.
+Provides the same interface as Python implementations.
+"""
+
+try:
+    import sa_rust
+    RUST_AVAILABLE = True
+except ImportError:
+    RUST_AVAILABLE = False
+    raise ImportError(
+        "Rust module 'sa_rust' not found. "
+        "Please build it with: maturin develop --release"
+    )
+
+
+def rastrigin_2d(x, y):
+    """2D Rastrigin function (uses Rust implementation)"""
+    return sa_rust.rastrigin_2d_py(float(x), float(y))
+
+
+def run_sa(init_temp, cooling_rate, step_size, num_steps, bounds, seed=None, num_runs=10):
+    """
+    Run Simulated Annealing algorithm (Rust serial version).
+    
+    Args:
+        init_temp (float): Initial temperature
+        cooling_rate (float): Temperature decay rate per step (0 < rate < 1)
+        step_size (float): Standard deviation for random walk
+        num_steps (int): Total number of SA iterations per run
+        bounds (tuple): (min, max) bounds for search space
+        seed (int, optional): Random seed for reproducibility
+        num_runs (int): Number of independent SA runs to average over
+        
+    Returns:
+        tuple: (avg_reward, costs, trajectory, median_idx)
+            - avg_reward: Average reward across all runs with penalty
+            - costs: List of final costs for each run
+            - trajectory: Trajectory of the median cost run [(x, y, cost), ...]
+            - median_idx: Index of the run with median cost
+    """
+    # Convert bounds to tuple if needed
+    if isinstance(bounds, list):
+        bounds = tuple(bounds)
+    
+    return sa_rust.run_sa(
+        float(init_temp),
+        float(cooling_rate),
+        float(step_size),
+        int(num_steps),
+        bounds,
+        int(seed) if seed is not None else None,
+        int(num_runs)
+    )
