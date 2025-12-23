@@ -14,7 +14,7 @@ def train_tuner():
     agent = PPOAgent(state_dim, action_dim, lr=3e-4, gamma=0.0, eps_clip=0.2, k_epochs=4)
     
     max_episodes = 1000 # Enough for convergence demo
-    update_timestep = 2 # Update every 20 episodes (batch size 20)
+    update_timestep = 10 # Update every 20 episodes (batch size 20)
     
     memory = {'states': [], 'actions': [], 'log_probs': [], 'rewards': [], 'is_terminals': []}
     
