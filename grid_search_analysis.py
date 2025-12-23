@@ -58,7 +58,7 @@ if len(costs_all) < 100:
     upper_bound = 20
 else:
     # median_cost = 2 * np.median(costs_all)
-    upper_bound = np.percentile(costs_all, 90)
+    upper_bound = np.percentile(costs_all, 95)
 
 # Fixed color scale bounds for Rastrigin 2D function
 # Global minimum: 0, Maximum in bounds [-5.12, 5.12]: ~80
