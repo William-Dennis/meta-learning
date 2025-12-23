@@ -4,7 +4,6 @@ import torch
 import matplotlib.pyplot as plt
 from tuning_env import TuningEnv
 from ppo_agent import PPOAgent
-import pandas as pd
 
 def train_tuner():
     env = TuningEnv()
@@ -59,6 +58,10 @@ def train_tuner():
 from sa_config import rastrigin_2d, run_sa
 
 def visualize_trajectory_evolution(params_history):
+    # Use python_serial for visualization because it handles numpy arrays correctly
+    # and provides a consistent baseline for plots.
+    from sa_algorithms import python_serial
+    
     # Checkpoints: 0%, 25%, 50%, 75%, 100%
     n = len(params_history)
     checkpoints = [0, int(n*0.25), int(n*0.50), int(n*0.75), n-1]
@@ -68,7 +71,7 @@ def visualize_trajectory_evolution(params_history):
     x = np.linspace(-5.12, 5.12, 100)
     y = np.linspace(-5.12, 5.12, 100)
     X, Y = np.meshgrid(x, y)
-    Z = rastrigin_2d(X, Y)
+    Z = python_serial.rastrigin_2d(X, Y)
     
     bounds = [-5.12, 5.12]
     
@@ -85,7 +88,7 @@ def visualize_trajectory_evolution(params_history):
         # Run 10 times to show stochasticity
         for r in range(10):
             # params contains: init_temp, cooling_rate, step_size, num_steps
-            _, _, last_trajectory, _ = run_sa(
+            _, _, last_trajectory, _ = python_serial.run_sa(
                 params['init_temp'], 
                 params['cooling_rate'], 
                 params['step_size'], 
@@ -108,11 +111,14 @@ def visualize_trajectory_evolution(params_history):
         print(f"Saved trajectory_evolution_{percentages[i]}pct.png")
 
 def visualize_2d(env, title="Optimization Trajectory"):
+    # Use python_serial for visualization
+    from sa_algorithms import python_serial
+    
     # Create meshgrid for Rastrigin
     x = np.linspace(-5.12, 5.12, 100)
     y = np.linspace(-5.12, 5.12, 100)
     X, Y = np.meshgrid(x, y)
-    Z = rastrigin_2d(X, Y)
+    Z = python_serial.rastrigin_2d(X, Y)
     
     plt.figure(figsize=(10, 8))
     plt.contourf(X, Y, Z, levels=50, cmap='viridis')
