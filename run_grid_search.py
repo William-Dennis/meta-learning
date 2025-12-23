@@ -31,4 +31,4 @@ def main(nn_step = NN_STEP):
     print(f"Completed at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
 if __name__ == "__main__":
-    main(0.1)
+    main(0.05)
