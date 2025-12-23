@@ -73,8 +73,10 @@ class TuningEnv:
         
         # Run SA
         avg_reward, costs, last_trajectory, median_idx = run_sa(
-            init_temp, cooling_rate, step_size, num_steps, self.bounds, seed=run_seed
+            init_temp, cooling_rate, step_size, num_steps, self.bounds, seed=run_seed, num_runs=100
         )
+
+        avg_reward = avg_reward - 1*(num_steps / 1000)
 
         self.last_trajectory = last_trajectory
         

@@ -9,9 +9,9 @@ import numpy as np
 # Format: (min_value, max_value, scale_type)
 PARAM_RANGES = {
     'init_temp': (0.1, 100.0, 'log'),      # T0: log scale from 0.1 to 100
-    'cooling_rate': (0.5, 0.99, 'linear'), # α: linear scale from 0.5 to 0.99
+    'cooling_rate': (0.01, 0.99, 'linear'), # α: linear scale from 0.01 to 0.99
     'step_size': (0.1, 5.0, 'log'),        # step: log scale from 0.1 to 5.0
-    'num_steps': (10, 1000, 'log_int'),     # N: log scale, integer, 20 to 300
+    'num_steps': (10, 1000, 'log_int'),     # N: log scale, integer, 10 to 1000
 }
 
 # NN output bounds
