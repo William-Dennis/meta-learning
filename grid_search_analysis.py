@@ -9,21 +9,9 @@ from param_scaling import (
     PARAM_RANGES, NN_MIN, NN_MAX
 )
 
-# Fixed color scale bounds for Rastrigin 2D function
-# Global minimum: 0, Maximum in bounds [-5.12, 5.12]: ~80
-COST_VMIN = 0
-COST_VMAX = 20  # Upper bound for Rastrigin function
 
 # SQLite database for caching results (faster than CSV for incremental writes)
 CACHE_DB = "grid_search_cache.db"
-
-# SA run parameters
-SA_SEED = 42
-SA_NUM_RUNS = 100  # Number of SA runs to average for each configuration
-
-# SA bounds for Rastrigin function
-SA_BOUNDS = [-5.12, 5.12]
-
 
 def init_cache_db():
     """Initialize SQLite database with proper schema."""
@@ -59,6 +47,33 @@ def init_cache_db():
     conn.commit()
     return conn
 
+conn = init_cache_db()
+
+# Get all costs from DB to compute median
+cursor = conn.cursor()
+cursor.execute('SELECT mean_cost FROM results')
+costs_all = [row[0] for row in cursor.fetchall()]
+
+if len(costs_all) < 100:
+    upper_bound = 20
+else:
+    # median_cost = 2 * np.median(costs_all)
+    upper_bound = np.percentile(costs_all, 90)
+
+# Fixed color scale bounds for Rastrigin 2D function
+# Global minimum: 0, Maximum in bounds [-5.12, 5.12]: ~80
+COST_VMIN = 0
+COST_VMAX = upper_bound  # Upper bound for Rastrigin function
+
+
+# SA run parameters
+SA_SEED = 42
+SA_NUM_RUNS = 100  # Number of SA runs to average for each configuration
+
+# SA bounds for Rastrigin function
+SA_BOUNDS = [-5.12, 5.12]
+
+
 
 def get_cached_result(conn, nn_params, seed, num_sa_runs):
     """
@@ -68,10 +83,10 @@ def get_cached_result(conn, nn_params, seed, num_sa_runs):
     cursor = conn.cursor()
     cursor.execute('''
         SELECT mean_cost FROM results 
-        WHERE abs(nn_init_temp - ?) < 1e-9
-          AND abs(nn_cooling_rate - ?) < 1e-9
-          AND abs(nn_step_size - ?) < 1e-9
-          AND abs(nn_num_steps - ?) < 1e-9
+        WHERE nn_init_temp = ?
+          AND nn_cooling_rate = ?
+          AND nn_step_size = ?
+          AND nn_num_steps = ?
           AND seed = ?
           AND num_sa_runs = ?
         LIMIT 1
@@ -81,6 +96,28 @@ def get_cached_result(conn, nn_params, seed, num_sa_runs):
     
     result = cursor.fetchone()
     return result[0] if result else None
+
+# def get_cached_result(conn, nn_params, seed, num_sa_runs):
+#     """
+#     Check if a result is already cached based on NN-space parameters.
+#     Returns mean_cost if found, None otherwise.
+#     """
+#     cursor = conn.cursor()
+#     cursor.execute('''
+#         SELECT mean_cost FROM results 
+#         WHERE abs(nn_init_temp - ?) < 1e-9
+#           AND abs(nn_cooling_rate - ?) < 1e-9
+#           AND abs(nn_step_size - ?) < 1e-9
+#           AND abs(nn_num_steps - ?) < 1e-9
+#           AND seed = ?
+#           AND num_sa_runs = ?
+#         LIMIT 1
+#     ''', (nn_params['init_temp'], nn_params['cooling_rate'], 
+#           nn_params['step_size'], nn_params['num_steps'],
+#           seed, num_sa_runs))
+    
+#     result = cursor.fetchone()
+#     return result[0] if result else None
 
 
 def save_result_immediately(conn, nn_params, actual_params, seed, num_sa_runs, mean_cost):
@@ -131,7 +168,7 @@ def run_grid_search(nn_step=1.0, verbose=True):
     print(f"{'='*60}")
     
     # Initialize database connection
-    conn = init_cache_db()
+    # conn = init_cache_db()
     initial_cache_size = get_cache_stats(conn)
     print(f"[CACHE] SQLite database: {CACHE_DB}")
     print(f"[CACHE] Initial cache size: {initial_cache_size} results")
