@@ -6,7 +6,6 @@ Uses multiprocessing to run multiple SA iterations in parallel.
 
 import numpy as np
 from multiprocessing import Pool, cpu_count
-from ..random_sampling import UnifiedRandomSampler
 
 
 def rastrigin_2d(x, y):
@@ -22,34 +21,28 @@ def _run_single_sa(args):
     Run a single SA optimization (helper function for parallel execution).
     
     Args:
-        args: Tuple of (init_temp, cooling_rate, step_size, num_steps, bounds, run_idx)
+        args: Tuple of (init_temp, cooling_rate, step_size, num_steps, bounds, run_idx, 
+                        starting_points, random_steps, acceptance_probs)
         
     Returns:
         tuple: (final_cost, trajectory)
     """
-    init_temp, cooling_rate, step_size, num_steps, bounds, run_idx = args
-    
-    # Use pre-computed random samples from UnifiedRandomSampler
-    sampler = UnifiedRandomSampler()
+    init_temp, cooling_rate, step_size, num_steps, bounds, run_idx, starting_points, random_steps, acceptance_probs = args
     
     # Get starting position from pre-computed samples
-    curr_x, curr_y = sampler.get_starting_point(run_idx)
+    curr_x, curr_y = starting_points[run_idx]
     curr_cost = rastrigin_2d(curr_x, curr_y)
     best_cost = curr_cost
     
     curr_temp = init_temp
-    
-    # Get random steps and acceptance probs for this run
-    random_steps = sampler.get_random_steps(run_idx, num_steps)
-    acceptance_probs = sampler.get_acceptance_probs(run_idx, num_steps)
     
     trajectory = []
     trajectory.append((curr_x, curr_y, curr_cost))
     
     for step_idx in range(num_steps):
         # Use pre-computed random steps
-        dx = random_steps[step_idx, 0] * step_size
-        dy = random_steps[step_idx, 1] * step_size
+        dx = random_steps[step_idx, run_idx, 0] * step_size
+        dy = random_steps[step_idx, run_idx, 1] * step_size
         
         cand_x = np.clip(curr_x + dx, bounds[0], bounds[1])
         cand_y = np.clip(curr_y + dy, bounds[0], bounds[1])
@@ -63,7 +56,7 @@ def _run_single_sa(args):
         else:
             prob = np.exp(-delta / curr_temp) if curr_temp > 1e-9 else 0.0
             # Use pre-computed acceptance probability
-            if acceptance_probs[step_idx] < prob:
+            if acceptance_probs[step_idx, run_idx] < prob:
                 accepted = True
         
         if accepted:
@@ -81,7 +74,8 @@ def _run_single_sa(args):
     return curr_cost, trajectory
 
 
-def run_sa(init_temp, cooling_rate, step_size, num_steps, bounds, seed=None, num_runs=10, num_threads=None):
+def run_sa(init_temp, cooling_rate, step_size, num_steps, bounds, seed=None, num_runs=10, num_threads=None,
+           starting_points=None, random_steps=None, acceptance_probs=None):
     """
     Run Simulated Annealing algorithm (parallel version).
     
@@ -94,10 +88,13 @@ def run_sa(init_temp, cooling_rate, step_size, num_steps, bounds, seed=None, num
         seed (int, optional): Random seed for reproducibility (ignored - uses pre-computed samples)
         num_runs (int): Number of independent SA runs to average over
         num_threads (int, optional): Number of parallel processes (defaults to CPU count)
+        starting_points (ndarray, optional): Pre-computed starting points, shape (num_runs, 2)
+        random_steps (ndarray, optional): Pre-computed random steps, shape (num_steps, num_runs, 2)
+        acceptance_probs (ndarray, optional): Pre-computed acceptance probabilities, shape (num_steps, num_runs)
         
     Returns:
         tuple: (avg_reward, costs, trajectory, median_idx)
-            - avg_reward: Average reward across all runs with penalty
+            - avg_reward: Average reward across all runs
             - costs: List of final costs for each run
             - trajectory: Trajectory of the median cost run [(x, y, cost), ...]
             - median_idx: Index of the run with median cost
@@ -105,9 +102,15 @@ def run_sa(init_temp, cooling_rate, step_size, num_steps, bounds, seed=None, num
     if num_threads is None:
         num_threads = cpu_count()
     
-    # Prepare arguments for each run with run indices instead of seeds
+    # Load samples if not provided
+    if starting_points is None or random_steps is None or acceptance_probs is None:
+        from ..random_sampling import load_random_samples
+        starting_points, random_steps, acceptance_probs = load_random_samples()
+    
+    # Prepare arguments for each run with run indices
     args_list = [
-        (init_temp, cooling_rate, step_size, num_steps, bounds, i)
+        (init_temp, cooling_rate, step_size, num_steps, bounds, i, 
+         starting_points, random_steps, acceptance_probs)
         for i in range(num_runs)
     ]
     

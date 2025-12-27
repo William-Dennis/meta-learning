@@ -39,8 +39,10 @@ class TestNoRNGInSAAlgorithms:
         assert 'np_random.normal' not in code_only, "python_serial should NOT use RNG normal"
         assert 'np_random.random()' not in code_only, "python_serial should NOT use RNG random()"
         
-        # Should USE UnifiedRandomSampler
-        assert 'UnifiedRandomSampler' in source, "python_serial MUST use UnifiedRandomSampler"
+        # Should accept pre-computed samples as parameters
+        assert 'starting_points' in source, "python_serial MUST accept starting_points parameter"
+        assert 'random_steps' in source, "python_serial MUST accept random_steps parameter"
+        assert 'acceptance_probs' in source, "python_serial MUST accept acceptance_probs parameter"
     
     def test_python_parallel_no_random_import(self):
         """Test that python_parallel.py does NOT import random or use np.random for generation."""
@@ -64,10 +66,11 @@ class TestNoRNGInSAAlgorithms:
         assert 'np_random.random()' not in code_only, "python_parallel should NOT use RNG random()"
         assert 'np.random.randint' not in code_only, "python_parallel should NOT use np.random.randint"
         
-        # Should USE UnifiedRandomSampler
-        assert 'UnifiedRandomSampler' in source, "python_parallel MUST use UnifiedRandomSampler"
+        # Should accept pre-computed samples as parameters
+        assert 'starting_points' in source, "python_parallel MUST accept starting_points parameter"
+        assert 'random_steps' in source, "python_parallel MUST accept random_steps parameter"
+        assert 'acceptance_probs' in source, "python_parallel MUST accept acceptance_probs parameter"
     
-    @pytest.mark.skip(reason="Rust implementation is WIP")
     def test_rust_no_random_imports(self):
         """Test that Rust implementation does NOT import rand crate."""
         # Check Cargo.toml
@@ -93,8 +96,12 @@ class TestNoRNGInSAAlgorithms:
         assert 'thread_rng' not in rust_source, "Rust code should NOT use thread_rng"
         assert 'ChaCha8Rng' not in rust_source, "Rust code should NOT use ChaCha8Rng"
         
-        # Should USE UnifiedRandomSampler
-        assert 'UnifiedRandomSampler' in rust_source, "Rust MUST use UnifiedRandomSampler"
+        # Should load pre-computed samples from .npy files
+        assert 'RandomSamples' in rust_source, "Rust MUST use pre-computed RandomSamples"
+        assert '.npy' in rust_source, "Rust MUST load from .npy files"
+        assert 'starting_points.npy' in rust_source, "Rust MUST load starting_points.npy"
+        assert 'random_steps.npy' in rust_source, "Rust MUST load random_steps.npy"
+        assert 'acceptance_probs.npy' in rust_source, "Rust MUST load acceptance_probs.npy"
     
     def test_deterministic_results_same_run_idx(self):
         """Test that same run_idx produces identical results across calls."""
@@ -183,14 +190,14 @@ class TestNoRNGInSAAlgorithms:
         np.testing.assert_array_equal(result1[1], result2[1], 
             "Different seeds should produce IDENTICAL results (seed ignored)")
     
-    def test_uses_unified_sampler_deterministically(self):
-        """Test that UnifiedRandomSampler is used and produces deterministic results."""
+    def test_uses_precomputed_samples_deterministically(self):
+        """Test that pre-computed samples are used and produce deterministic results."""
         from meta_learning.sa_algorithms import python_serial
-        from meta_learning.random_sampling import UnifiedRandomSampler
+        from meta_learning.random_sampling import load_random_samples
         
-        # Get expected starting points directly from sampler
-        sampler = UnifiedRandomSampler()
-        expected_starts = [sampler.get_starting_point(i) for i in range(5)]
+        # Load samples
+        starting_points, random_steps, acceptance_probs = load_random_samples()
+        expected_starts = [tuple(starting_points[i]) for i in range(5)]
         
         # Run SA and check it uses exact starting points
         _, costs, trajectory, median_idx = python_serial.run_sa(
