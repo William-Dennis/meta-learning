@@ -82,6 +82,9 @@ class TestNoRNGInSAAlgorithms:
         assert 'rand_chacha' not in cargo_content, "Cargo.toml should NOT have rand_chacha dependency"
         assert 'rand_distr' not in cargo_content, "Cargo.toml should NOT have rand_distr dependency"
         
+        # Should NOT have ndarray-npy since we pass arrays from Python
+        assert 'ndarray-npy' not in cargo_content, "Cargo.toml should NOT have ndarray-npy (arrays passed from Python)"
+        
         # Check Rust source code
         with open('rust/src/lib.rs', 'r') as f:
             rust_source = f.read()
@@ -96,12 +99,10 @@ class TestNoRNGInSAAlgorithms:
         assert 'thread_rng' not in rust_source, "Rust code should NOT use thread_rng"
         assert 'ChaCha8Rng' not in rust_source, "Rust code should NOT use ChaCha8Rng"
         
-        # Should load pre-computed samples from .npy files
-        assert 'RandomSamples' in rust_source, "Rust MUST use pre-computed RandomSamples"
-        assert '.npy' in rust_source, "Rust MUST load from .npy files"
-        assert 'starting_points.npy' in rust_source, "Rust MUST load starting_points.npy"
-        assert 'random_steps.npy' in rust_source, "Rust MUST load random_steps.npy"
-        assert 'acceptance_probs.npy' in rust_source, "Rust MUST load acceptance_probs.npy"
+        # Should accept pre-computed samples from Python as parameters
+        assert 'starting_points' in rust_source, "Rust MUST accept starting_points parameter from Python"
+        assert 'random_steps' in rust_source, "Rust MUST accept random_steps parameter from Python"
+        assert 'acceptance_probs' in rust_source, "Rust MUST accept acceptance_probs parameter from Python"
     
     def test_deterministic_results_same_run_idx(self):
         """Test that same run_idx produces identical results across calls."""
