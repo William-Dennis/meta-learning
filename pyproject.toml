@@ -21,3 +21,8 @@ build-backend = "maturin"
 [tool.maturin]
 features = ["pyo3/extension-module"]
 module-name = "sa_rust"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]
