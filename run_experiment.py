@@ -13,8 +13,33 @@ def init_memory():
     }
 
 
-def train_tuner():
-    """Train PPO agent to tune SA hyperparameters."""
+def train_step(env, agent, memory):
+    """Execute one training step."""
+    state, _ = env.reset()
+    action, log_prob, _ = agent.select_action(state)
+    _, reward, _, _, info = env.step(action)
+    
+    reward_scaled = reward * 0.1
+    memory['states'].append(state)
+    memory['actions'].append(action)
+    memory['log_probs'].append(log_prob)
+    memory['rewards'].append(reward_scaled)
+    memory['is_terminals'].append(True)
+    
+    return reward, info
+
+
+def print_progress(i, history_rewards, history_params, step):
+    """Print training progress."""
+    recent = history_rewards[-step:]
+    avg_r = np.mean(recent)
+    params_recent = history_params[-step:]
+    avg_c = np.mean([p['mean_cost'] for p in params_recent])
+    print(f"Trial {i} | Reward: {avg_r:.2f} | Cost: {-avg_c:.2f}")
+
+
+def init_training():
+    """Initialize training components."""
     env = TuningEnv()
     state_dim = env.observation_space.shape[0]
     action_dim = env.action_space.shape[0]
@@ -24,6 +49,13 @@ def train_tuner():
         gamma=0.0, eps_clip=0.2, k_epochs=4
     )
     
+    return env, agent
+
+
+def train_tuner():
+    """Train PPO agent to tune SA hyperparameters."""
+    env, agent = init_training()
+    
     max_episodes = 1000
     update_timestep = 10
     memory = init_memory()
@@ -32,16 +64,7 @@ def train_tuner():
     
     print("Starting tuning...")
     for i in range(max_episodes):
-        state, _ = env.reset()
-        action, log_prob, _ = agent.select_action(state)
-        _, reward, _, _, info = env.step(action)
-        
-        reward_scaled = reward * 0.1
-        memory['states'].append(state)
-        memory['actions'].append(action)
-        memory['log_probs'].append(log_prob)
-        memory['rewards'].append(reward_scaled)
-        memory['is_terminals'].append(True)
+        reward, info = train_step(env, agent, memory)
         
         if (i + 1) % update_timestep == 0:
             agent.update(memory)
@@ -51,11 +74,9 @@ def train_tuner():
         history_params.append(info)
         
         if i % update_timestep == 0:
-            recent = history_rewards[-update_timestep:]
-            avg_r = np.mean(recent)
-            params_recent = history_params[-update_timestep:]
-            avg_c = np.mean([p['mean_cost'] for p in params_recent])
-            print(f"Trial {i} | Reward: {avg_r:.2f} | Cost: {-avg_c:.2f}")
+            print_progress(
+                i, history_rewards, history_params, update_timestep
+            )
     
     return agent, history_rewards, history_params
 

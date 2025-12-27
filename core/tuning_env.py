@@ -55,36 +55,46 @@ class TuningEnv:
     def step(self, action):
         """Execute one SA run with the given action."""
         action = np.clip(action, -5.0, 5.0)
-        
-        init_temp = map_action_to_param(action[0], 'init_temp')
-        cooling_rate = map_action_to_param(
-            action[1], 'cooling_rate'
-        )
-        step_size = map_action_to_param(action[2], 'step_size')
-        num_steps = map_action_to_param(action[3], 'num_steps')
+        params = self._get_params(action)
         
         from core.sa_config import run_sa
         
         run_seed = self.np_random.integers(0, 2**32)
         
         avg_reward, costs, trajectory, median_idx = run_sa(
-            init_temp, cooling_rate, step_size, num_steps,
+            params['init_temp'], params['cooling_rate'],
+            params['step_size'], params['num_steps'],
             self.bounds, seed=run_seed, num_runs=100
         )
         
         self.last_trajectory = trajectory
         
-        info = {
-            'init_temp': init_temp,
-            'cooling_rate': cooling_rate,
-            'step_size': step_size,
-            'num_steps': num_steps,
-            'nn_action': action.tolist(),
-            'final_cost': costs[median_idx],
-            'mean_cost': np.mean(costs)
-        }
+        info = self._build_info(params, action, costs, median_idx)
         
         return (
             np.array([0.0], dtype=np.float32),
             avg_reward, True, False, info
         )
+    
+    def _get_params(self, action):
+        """Convert action to SA parameters."""
+        return {
+            'init_temp': map_action_to_param(action[0], 'init_temp'),
+            'cooling_rate': map_action_to_param(
+                action[1], 'cooling_rate'
+            ),
+            'step_size': map_action_to_param(action[2], 'step_size'),
+            'num_steps': map_action_to_param(action[3], 'num_steps'),
+        }
+    
+    def _build_info(self, params, action, costs, median_idx):
+        """Build info dictionary."""
+        return {
+            'init_temp': params['init_temp'],
+            'cooling_rate': params['cooling_rate'],
+            'step_size': params['step_size'],
+            'num_steps': params['num_steps'],
+            'nn_action': action.tolist(),
+            'final_cost': costs[median_idx],
+            'mean_cost': np.mean(costs)
+        }
