@@ -14,7 +14,7 @@ fn rastrigin_2d(x: f64, y: f64) -> f64 {
 }
 
 /// Extract f64 value from Python object
-fn extract_f64(py: Python, obj: &Bound<PyAny>) -> PyResult<f64> {
+fn extract_f64(_py: Python, obj: &Bound<PyAny>) -> PyResult<f64> {
     obj.extract::<f64>()
 }
 
@@ -150,7 +150,8 @@ fn compute_result(
 
 /// Run Simulated Annealing algorithm (serial version)
 #[pyfunction]
-#[pyo3(signature = (init_temp, cooling_rate, step_size, num_steps, bounds, _seed=None, num_runs=10, starting_points, random_steps, acceptance_probs))]
+#[pyo3(signature = (init_temp, cooling_rate, step_size, num_steps, bounds, starting_points, random_steps, acceptance_probs, seed=None, num_runs=10))]
+#[allow(unused_variables)]
 fn run_sa(
     py: Python,
     init_temp: f64,
@@ -158,11 +159,11 @@ fn run_sa(
     step_size: f64,
     num_steps: usize,
     bounds: (f64, f64),
-    _seed: Option<u64>,
-    num_runs: usize,
     starting_points: &Bound<PyAny>,
     random_steps: &Bound<PyAny>,
     acceptance_probs: &Bound<PyAny>,
+    seed: Option<u64>,
+    num_runs: usize,
 ) -> PyResult<(f64, Vec<f64>, Vec<(f64, f64, f64)>, usize)> {
     let mut costs = Vec::with_capacity(num_runs);
     let mut trajectories = Vec::with_capacity(num_runs);
@@ -300,7 +301,8 @@ fn collect_parallel_results(
 
 /// Run Simulated Annealing algorithm (parallel version)
 #[pyfunction]
-#[pyo3(signature = (init_temp, cooling_rate, step_size, num_steps, bounds, _seed=None, num_runs=10, num_threads=None, starting_points, random_steps, acceptance_probs))]
+#[pyo3(signature = (init_temp, cooling_rate, step_size, num_steps, bounds, starting_points, random_steps, acceptance_probs, seed=None, num_runs=10, num_threads=None))]
+#[allow(unused_variables)]
 fn run_sa_parallel(
     py: Python,
     init_temp: f64,
@@ -308,12 +310,12 @@ fn run_sa_parallel(
     step_size: f64,
     num_steps: usize,
     bounds: (f64, f64),
-    _seed: Option<u64>,
-    num_runs: usize,
-    num_threads: Option<usize>,
     starting_points: &Bound<PyAny>,
     random_steps: &Bound<PyAny>,
     acceptance_probs: &Bound<PyAny>,
+    seed: Option<u64>,
+    num_runs: usize,
+    num_threads: Option<usize>,
 ) -> PyResult<(f64, Vec<f64>, Vec<(f64, f64, f64)>, usize)> {
     let num_threads = num_threads.unwrap_or_else(|| 
         thread::available_parallelism().map(|n| n.get()).unwrap_or(4)

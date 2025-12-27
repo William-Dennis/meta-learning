@@ -60,9 +60,9 @@ def run_sa(init_temp, cooling_rate, step_size, num_steps, bounds, seed=None, num
         float(step_size),
         int(num_steps),
         bounds,
-        int(seed) if seed is not None else None,
-        int(num_runs),
         starting_points,
         random_steps,
-        acceptance_probs
+        acceptance_probs,
+        seed=int(seed) if seed is not None else None,
+        num_runs=int(num_runs)
     )
