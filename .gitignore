@@ -13,8 +13,12 @@ Cargo.lock
 *.pdb
 
 # Random sampling data (large binary files)
+src/meta_learning/data/starting_points.npy
+src/meta_learning/data/random_steps.npy
+src/meta_learning/data/acceptance_probs.npy
 data/starting_points.npy
 data/random_steps.npy
+data/acceptance_probs.npy
 
 # Distribution / packaging
 .Python

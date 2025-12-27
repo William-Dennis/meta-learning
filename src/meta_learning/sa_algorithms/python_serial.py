@@ -5,6 +5,7 @@ This is a clean, standalone implementation that can be used as a reference.
 """
 
 import numpy as np
+from ..random_sampling import UnifiedRandomSampler
 
 
 def rastrigin_2d(x, y):
@@ -25,7 +26,7 @@ def run_sa(init_temp, cooling_rate, step_size, num_steps, bounds, seed=None, num
         step_size (float): Standard deviation for random walk
         num_steps (int): Total number of SA iterations per run
         bounds (tuple): (min, max) bounds for search space
-        seed (int, optional): Random seed for reproducibility
+        seed (int, optional): Random seed for reproducibility (ignored - uses pre-computed samples)
         num_runs (int): Number of independent SA runs to average over
         
     Returns:
@@ -35,31 +36,32 @@ def run_sa(init_temp, cooling_rate, step_size, num_steps, bounds, seed=None, num
             - trajectory: Trajectory of the median cost run [(x, y, cost), ...]
             - median_idx: Index of the run with median cost
     """
-    if seed is None:
-        np_random = np.random
-    else:
-        np_random = np.random.default_rng(seed)
+    # Use pre-computed random samples from UnifiedRandomSampler
+    sampler = UnifiedRandomSampler()
     
     total_reward = 0
     costs = []
     trajectories = []
     
-    for _ in range(num_runs):
-        # Random start position
-        curr_x = np_random.uniform(bounds[0], bounds[1])
-        curr_y = np_random.uniform(bounds[0], bounds[1])
+    for run_idx in range(num_runs):
+        # Get starting position from pre-computed samples
+        curr_x, curr_y = sampler.get_starting_point(run_idx)
         curr_cost = rastrigin_2d(curr_x, curr_y)
         best_cost = curr_cost
         
         curr_temp = init_temp
         
+        # Get random steps and acceptance probs for this run
+        random_steps = sampler.get_random_steps(run_idx, num_steps)
+        acceptance_probs = sampler.get_acceptance_probs(run_idx, num_steps)
+        
         trajectory = []
         trajectory.append((curr_x, curr_y, curr_cost))
         
-        for _ in range(num_steps):
-            # Generate neighbor using normal distribution
-            dx = np_random.normal(0, step_size)
-            dy = np_random.normal(0, step_size)
+        for step_idx in range(num_steps):
+            # Use pre-computed random steps
+            dx = random_steps[step_idx, 0] * step_size
+            dy = random_steps[step_idx, 1] * step_size
             
             cand_x = np.clip(curr_x + dx, bounds[0], bounds[1])
             cand_y = np.clip(curr_y + dy, bounds[0], bounds[1])
@@ -72,7 +74,8 @@ def run_sa(init_temp, cooling_rate, step_size, num_steps, bounds, seed=None, num
                 accepted = True
             else:
                 prob = np.exp(-delta / curr_temp) if curr_temp > 1e-9 else 0.0
-                if np_random.random() < prob:
+                # Use pre-computed acceptance probability
+                if acceptance_probs[step_idx] < prob:
                     accepted = True
             
             if accepted:
@@ -91,8 +94,8 @@ def run_sa(init_temp, cooling_rate, step_size, num_steps, bounds, seed=None, num
         trajectories.append(trajectory)
         total_reward += (-curr_cost)
     
-    # Average reward with penalty based on number of steps
-    avg_reward = (total_reward / num_runs) - (num_steps / 1000) + 10
+    # Average reward (no penalty - penalty is handled in environment)
+    avg_reward = (total_reward / num_runs)
     
     # Store trajectory of the run with median cost (representative)
     sorted_indices = np.argsort(costs)

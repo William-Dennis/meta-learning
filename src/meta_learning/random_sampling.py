@@ -21,6 +21,7 @@ import os
 DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
 STARTING_POINTS_FILE = os.path.join(DATA_DIR, 'starting_points.npy')
 RANDOM_STEPS_FILE = os.path.join(DATA_DIR, 'random_steps.npy')
+ACCEPTANCE_PROBS_FILE = os.path.join(DATA_DIR, 'acceptance_probs.npy')
 
 # Pre-generate sufficient samples for typical use cases
 NUM_STARTING_POINTS = 10000  # Support up to 10k SA runs
@@ -40,16 +41,17 @@ def generate_random_samples(seed=42, force=False):
         force: If True, regenerate even if files exist
         
     Returns:
-        tuple: (starting_points, random_steps)
+        tuple: (starting_points, random_steps, acceptance_probs)
     """
     os.makedirs(DATA_DIR, exist_ok=True)
     
     # Check if files already exist
-    if not force and os.path.exists(STARTING_POINTS_FILE) and os.path.exists(RANDOM_STEPS_FILE):
+    if not force and os.path.exists(STARTING_POINTS_FILE) and os.path.exists(RANDOM_STEPS_FILE) and os.path.exists(ACCEPTANCE_PROBS_FILE):
         print(f"[Random Sampling] Loading existing random samples from {DATA_DIR}")
         starting_points = np.load(STARTING_POINTS_FILE)
         random_steps = np.load(RANDOM_STEPS_FILE)
-        return starting_points, random_steps
+        acceptance_probs = np.load(ACCEPTANCE_PROBS_FILE)
+        return starting_points, random_steps, acceptance_probs
     
     print(f"[Random Sampling] Generating unified random samples (seed={seed})...")
     rng = np.random.default_rng(seed)
@@ -66,15 +68,21 @@ def generate_random_samples(seed=42, force=False):
     # Shape: (NUM_STEP_ROWS, NUM_STEP_COLUMNS, 2) for dx and dy
     random_steps = rng.standard_normal(size=(NUM_STEP_ROWS, NUM_STEP_COLUMNS, 2))
     
+    # Generate random uniform values for acceptance probability checks
+    # Shape: (NUM_STEP_ROWS, NUM_STEP_COLUMNS)
+    acceptance_probs = rng.uniform(0, 1, size=(NUM_STEP_ROWS, NUM_STEP_COLUMNS))
+    
     # Save to files
     np.save(STARTING_POINTS_FILE, starting_points)
     np.save(RANDOM_STEPS_FILE, random_steps)
+    np.save(ACCEPTANCE_PROBS_FILE, acceptance_probs)
     
     print(f"[Random Sampling] Saved starting points: {starting_points.shape}")
     print(f"[Random Sampling] Saved random steps: {random_steps.shape}")
+    print(f"[Random Sampling] Saved acceptance probs: {acceptance_probs.shape}")
     print(f"[Random Sampling] Files saved to {DATA_DIR}")
     
-    return starting_points, random_steps
+    return starting_points, random_steps, acceptance_probs
 
 
 def load_random_samples():
@@ -82,15 +90,16 @@ def load_random_samples():
     Load pre-generated random samples.
     
     Returns:
-        tuple: (starting_points, random_steps)
+        tuple: (starting_points, random_steps, acceptance_probs)
     """
-    if not os.path.exists(STARTING_POINTS_FILE) or not os.path.exists(RANDOM_STEPS_FILE):
+    if not os.path.exists(STARTING_POINTS_FILE) or not os.path.exists(RANDOM_STEPS_FILE) or not os.path.exists(ACCEPTANCE_PROBS_FILE):
         print("[Random Sampling] Random sample files not found, generating...")
         return generate_random_samples()
     
     starting_points = np.load(STARTING_POINTS_FILE)
     random_steps = np.load(RANDOM_STEPS_FILE)
-    return starting_points, random_steps
+    acceptance_probs = np.load(ACCEPTANCE_PROBS_FILE)
+    return starting_points, random_steps, acceptance_probs
 
 
 def get_starting_point(run_idx):
@@ -103,7 +112,7 @@ def get_starting_point(run_idx):
     Returns:
         tuple: (x, y) starting coordinates
     """
-    starting_points, _ = load_random_samples()
+    starting_points, _, _ = load_random_samples()
     if run_idx >= len(starting_points):
         raise ValueError(f"Run index {run_idx} exceeds available starting points ({len(starting_points)})")
     return starting_points[run_idx]
@@ -120,13 +129,33 @@ def get_random_steps(run_idx, num_steps):
     Returns:
         ndarray: Shape (num_steps, 2) with dx, dy for each step
     """
-    _, random_steps = load_random_samples()
+    _, random_steps, _ = load_random_samples()
     if run_idx >= random_steps.shape[1]:
         raise ValueError(f"Run index {run_idx} exceeds available columns ({random_steps.shape[1]})")
     if num_steps > random_steps.shape[0]:
         raise ValueError(f"Requested {num_steps} steps exceeds available rows ({random_steps.shape[0]})")
     
     return random_steps[:num_steps, run_idx, :]
+
+
+def get_acceptance_probs(run_idx, num_steps):
+    """
+    Get acceptance probabilities for a specific SA run.
+    
+    Args:
+        run_idx: Index of the run (0-based)
+        num_steps: Number of steps needed
+        
+    Returns:
+        ndarray: Shape (num_steps,) with acceptance probability thresholds for each step
+    """
+    _, _, acceptance_probs = load_random_samples()
+    if run_idx >= acceptance_probs.shape[1]:
+        raise ValueError(f"Run index {run_idx} exceeds available columns ({acceptance_probs.shape[1]})")
+    if num_steps > acceptance_probs.shape[0]:
+        raise ValueError(f"Requested {num_steps} steps exceeds available rows ({acceptance_probs.shape[0]})")
+    
+    return acceptance_probs[:num_steps, run_idx]
 
 
 class UnifiedRandomSampler:
@@ -140,8 +169,10 @@ class UnifiedRandomSampler:
         for run_idx in range(num_runs):
             x, y = sampler.get_starting_point(run_idx)
             steps = sampler.get_random_steps(run_idx, num_steps)
+            probs = sampler.get_acceptance_probs(run_idx, num_steps)
             # Use (x, y) as starting point
             # Use steps[:, 0] for dx and steps[:, 1] for dy
+            # Use probs for acceptance probability checks
     """
     
     def __init__(self, ensure_loaded=True):
@@ -153,14 +184,15 @@ class UnifiedRandomSampler:
         """
         self.starting_points = None
         self.random_steps = None
+        self.acceptance_probs = None
         
         if ensure_loaded:
-            self.starting_points, self.random_steps = load_random_samples()
+            self.starting_points, self.random_steps, self.acceptance_probs = load_random_samples()
     
     def get_starting_point(self, run_idx):
         """Get starting point for a specific run."""
         if self.starting_points is None:
-            self.starting_points, self.random_steps = load_random_samples()
+            self.starting_points, self.random_steps, self.acceptance_probs = load_random_samples()
         
         if run_idx >= len(self.starting_points):
             raise ValueError(f"Run index {run_idx} exceeds available starting points ({len(self.starting_points)})")
@@ -170,7 +202,7 @@ class UnifiedRandomSampler:
     def get_random_steps(self, run_idx, num_steps):
         """Get random steps for a specific run."""
         if self.random_steps is None:
-            self.starting_points, self.random_steps = load_random_samples()
+            self.starting_points, self.random_steps, self.acceptance_probs = load_random_samples()
         
         if run_idx >= self.random_steps.shape[1]:
             raise ValueError(f"Run index {run_idx} exceeds available columns ({self.random_steps.shape[1]})")
@@ -178,6 +210,18 @@ class UnifiedRandomSampler:
             raise ValueError(f"Requested {num_steps} steps exceeds available rows ({self.random_steps.shape[0]})")
         
         return self.random_steps[:num_steps, run_idx, :]
+    
+    def get_acceptance_probs(self, run_idx, num_steps):
+        """Get acceptance probabilities for a specific run."""
+        if self.acceptance_probs is None:
+            self.starting_points, self.random_steps, self.acceptance_probs = load_random_samples()
+        
+        if run_idx >= self.acceptance_probs.shape[1]:
+            raise ValueError(f"Run index {run_idx} exceeds available columns ({self.acceptance_probs.shape[1]})")
+        if num_steps > self.acceptance_probs.shape[0]:
+            raise ValueError(f"Requested {num_steps} steps exceeds available rows ({self.acceptance_probs.shape[0]})")
+        
+        return self.acceptance_probs[:num_steps, run_idx]
 
 
 # Generate random samples when module is imported (lazy loading)
@@ -191,7 +235,8 @@ if __name__ == "__main__":
     parser.add_argument("--force", action="store_true", help="Force regeneration even if files exist")
     args = parser.parse_args()
     
-    starting_points, random_steps = generate_random_samples(seed=args.seed, force=args.force)
+    starting_points, random_steps, acceptance_probs = generate_random_samples(seed=args.seed, force=args.force)
     print(f"\n✓ Generated {len(starting_points)} starting points")
     print(f"✓ Generated {random_steps.shape[1]} columns × {random_steps.shape[0]} rows of random steps")
+    print(f"✓ Generated {acceptance_probs.shape[1]} columns × {acceptance_probs.shape[0]} rows of acceptance probabilities")
     print(f"✓ Each column supports up to {random_steps.shape[0]} optimization steps")
