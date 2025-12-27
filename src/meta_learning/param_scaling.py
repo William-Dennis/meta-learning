@@ -9,9 +9,9 @@ import numpy as np
 # Format: (min_value, max_value, scale_type)
 PARAM_RANGES = {
     'init_temp': (0.1, 100.0, 'log'),      # T0: log scale from 0.1 to 100
-    'cooling_rate': (0.5, 0.99, 'linear'), # α: linear scale from 0.5 to 0.99
+    'cooling_rate': (0.001, 0.999, 'linear'), # α: linear scale from 0.001 to 0.999
     'step_size': (0.1, 5.0, 'log'),        # step: log scale from 0.1 to 5.0
-    'num_steps': (10, 1000, 'log_int'),     # N: log scale, integer, 20 to 300
+    'num_steps': (10, 1000, 'log_int'),     # N: log scale, integer, 10 to 1000
 }
 
 # NN output bounds
@@ -98,58 +98,9 @@ def get_nn_grid(step=1.0):
     Generate a grid of NN output values with the specified step size.
     
     Args:
-        step: Step size in NN space (default 1.0 gives [-5,-4,...,4,5])
+        step: Step size for NN output grid
         
     Returns:
-        numpy array of NN values from -5 to 5 with given step
+        List of NN output values
     """
-    return np.arange(NN_MIN, NN_MAX + step/2, step)  # +step/2 to include endpoint
-
-
-def get_param_grid(param_name, step=1.0):
-    """
-    Generate a grid of actual parameter values corresponding to NN grid.
-    
-    Args:
-        param_name: Parameter name
-        step: Step size in NN space
-        
-    Returns:
-        numpy array of actual parameter values
-    """
-    nn_values = get_nn_grid(step)
-    return np.array([nn_output_to_param(v, param_name) for v in nn_values])
-
-
-def get_default_value(param_name):
-    """
-    Get the default/middle value for a parameter (corresponds to NN output = 0).
-    
-    Args:
-        param_name: Parameter name
-        
-    Returns:
-        Default parameter value
-    """
-    return nn_output_to_param(0.0, param_name)
-
-
-# Print parameter ranges when imported for reference
-if __name__ == "__main__":
-    print("Parameter Scaling Reference")
-    print("=" * 60)
-    print(f"NN output range: [{NN_MIN}, {NN_MAX}]")
-    print()
-    
-    for param_name, (low, high, scale_type) in PARAM_RANGES.items():
-        print(f"{param_name} ({scale_type}):")
-        print(f"  Range: [{low}, {high}]")
-        print(f"  NN=-5 -> {nn_output_to_param(-5, param_name)}")
-        print(f"  NN=0  -> {nn_output_to_param(0, param_name)}")
-        print(f"  NN=+5 -> {nn_output_to_param(5, param_name)}")
-        print()
-    
-    print("Grid with step=1.0:")
-    nn_grid = get_nn_grid(1.0)
-    print(f"  NN values: {nn_grid}")
-    print(f"  Grid size: {len(nn_grid)} points")
+    return list(np.arange(NN_MIN, NN_MAX + step, step))
