@@ -6,12 +6,18 @@ readme = "README.md"
 authors = [
     { name = "williamdennis", email = "william.dennis@auroraer.com" }
 ]
-requires-python = ">=3.13"
-dependencies = []
-
-[project.scripts]
-meta-learning = "meta_learning:main"
+requires-python = ">=3.12"
+dependencies = [
+    "numpy>=1.24.0",
+    "matplotlib>=3.7.0",
+    "torch>=2.0.0",
+    "maturin>=1.10.2",
+]
 
 [build-system]
-requires = ["uv_build>=0.9.8,<0.10.0"]
-build-backend = "uv_build"
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
+module-name = "sa_rust"
