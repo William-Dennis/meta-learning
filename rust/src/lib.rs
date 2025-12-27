@@ -253,4 +253,3 @@ fn sa_rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(rastrigin_2d_py, m)?)?;
     Ok(())
 }
-
