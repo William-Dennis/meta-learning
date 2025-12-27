@@ -1,5 +1,6 @@
 use pyo3::prelude::*;
-use pyo3::types::PyList;
+use pyo3::types::{PyAnyMethods, PyList};
+use rayon::prelude::*;
 use std::f64::consts::PI;
 
 /// 2D Rastrigin function
@@ -122,20 +123,27 @@ fn run_sa(
     for run_idx in 0..num_runs {
         // Get pre-generated starting point (NO RNG)
         let start_point = sampler.call_method1("get_starting_point", (run_idx,))?;
-        let start_tuple: (f64, f64) = start_point.extract()?;
-        let (start_x, start_y) = start_tuple;
+        
+        // Try extracting as tuple first, then as numpy array
+        let (start_x, start_y) = match start_point.extract::<(f64, f64)>() {
+            Ok(tuple) => tuple,
+            Err(_) => {
+                // Must be numpy array, convert via tolist
+                let start_array = start_point.call_method0("tolist")?;
+                let start_list: Vec<f64> = start_array.extract()?;
+                (start_list[0], start_list[1])
+            }
+        };
         
         // Get pre-generated random steps (NO RNG)
         let steps_array = sampler.call_method1("get_random_steps", (run_idx, num_steps))?;
-        let steps_list: &Bound<'_, PyList> = steps_array.downcast()?;
+        let steps_list_py = steps_array.call_method0("tolist")?;
+        let steps_list: Vec<Vec<f64>> = steps_list_py.extract()?;
         
-        // Convert Python array to Rust vec
-        let mut random_steps = Vec::with_capacity(num_steps);
-        for i in 0..num_steps {
-            let step = steps_list.get_item(i)?;
-            let step_tuple: (f64, f64) = step.extract()?;
-            random_steps.push(step_tuple);
-        }
+        // Convert to vec of tuples
+        let random_steps: Vec<(f64, f64)> = steps_list.iter()
+            .map(|v| (v[0], v[1]))
+            .collect();
         
         // Run SA with pre-generated samples (NO RNG)
         let (curr_cost, trajectory) = run_single_sa_with_samples(
@@ -166,13 +174,11 @@ fn run_sa(
     Ok((avg_reward, costs, last_trajectory, median_idx))
 }
 
-/// Run Simulated Annealing algorithm (Rust "parallel" version)
+/// Run Simulated Annealing algorithm (TRUE Rust parallel version with Rayon)
 /// 
-/// NOTE: Despite the "parallel" name, this implementation is currently SERIAL.
-/// The name is kept for API compatibility and reflects that Rust execution is fast
-/// enough to compete with parallel Python implementations. True Rust-native 
-/// parallelism would require pre-loading all random samples into Rust data structures,
-/// which is not implemented due to the Python interop overhead.
+/// This implementation uses Rayon for TRUE parallel execution across CPU cores.
+/// All random samples are pre-loaded into Rust data structures to avoid Python GIL
+/// contention during parallel execution.
 /// 
 /// Uses ONLY pre-generated random samples from Python UnifiedRandomSampler.
 /// NO random number generation occurs in this function.
@@ -185,7 +191,7 @@ fn run_sa(
 ///     bounds: (min, max) bounds for search space
 ///     seed: Ignored - uses run index for deterministic sampling
 ///     num_runs: Number of SA runs to average over
-///     num_threads: Ignored - implementation is serial
+///     num_threads: Optional number of threads (defaults to CPU count)
 /// 
 /// Returns:
 ///     (avg_reward, costs, trajectory, median_idx)
@@ -207,47 +213,79 @@ fn run_sa_parallel(
     let sampler_class = random_sampling.getattr("UnifiedRandomSampler")?;
     let sampler = sampler_class.call0()?;
     
-    let mut total_reward = 0.0;
-    let mut costs = Vec::with_capacity(num_runs);
-    let mut trajectories: Vec<Vec<(f64, f64, f64)>> = Vec::with_capacity(num_runs);
-    
-    // NOTE: This is a SERIAL implementation. The speedup comes from Rust's performance,
-    // not from parallelism. True parallel execution would require loading all random
-    // samples upfront to avoid Python GIL contention during parallel execution.
+    // PRE-LOAD ALL random samples into Rust data structures to enable true parallelism
+    // This avoids Python GIL contention during parallel execution
+    let mut all_starting_points = Vec::with_capacity(num_runs);
+    let mut all_random_steps = Vec::with_capacity(num_runs);
     
     for run_idx in 0..num_runs {
         // Get pre-generated starting point (NO RNG)
         let start_point = sampler.call_method1("get_starting_point", (run_idx,))?;
-        let start_tuple: (f64, f64) = start_point.extract()?;
-        let (start_x, start_y) = start_tuple;
+        
+        // Try extracting as tuple first, then as numpy array
+        let start_tuple = match start_point.extract::<(f64, f64)>() {
+            Ok(tuple) => tuple,
+            Err(_) => {
+                // Must be numpy array, convert via tolist
+                let start_array = start_point.call_method0("tolist")?;
+                let start_list: Vec<f64> = start_array.extract()?;
+                (start_list[0], start_list[1])
+            }
+        };
+        all_starting_points.push(start_tuple);
         
         // Get pre-generated random steps (NO RNG)
         let steps_array = sampler.call_method1("get_random_steps", (run_idx, num_steps))?;
-        let steps_list: &Bound<'_, PyList> = steps_array.downcast()?;
+        let steps_list_py = steps_array.call_method0("tolist")?;
+        let steps_list: Vec<Vec<f64>> = steps_list_py.extract()?;
         
-        // Convert Python array to Rust vec
-        let mut random_steps = Vec::with_capacity(num_steps);
-        for i in 0..num_steps {
-            let step = steps_list.get_item(i)?;
-            let step_tuple: (f64, f64) = step.extract()?;
-            random_steps.push(step_tuple);
-        }
-        
-        // Run SA with pre-generated samples (NO RNG)
-        let (curr_cost, trajectory) = run_single_sa_with_samples(
-            start_x,
-            start_y,
-            &random_steps,
-            init_temp,
-            cooling_rate,
-            step_size,
-            num_steps,
-            bounds,
-        );
-        
-        costs.push(curr_cost);
+        // Convert to vec of tuples
+        let random_steps: Vec<(f64, f64)> = steps_list.iter()
+            .map(|v| (v[0], v[1]))
+            .collect();
+        all_random_steps.push(random_steps);
+    }
+    
+    // Set thread pool size if specified
+    if let Some(threads) = num_threads {
+        rayon::ThreadPoolBuilder::new()
+            .num_threads(threads)
+            .build_global()
+            .ok(); // Ignore error if already initialized
+    }
+    
+    // Release GIL and run TRUE parallel execution with Rayon
+    let results: Vec<(f64, Vec<(f64, f64, f64)>)> = py.allow_threads(|| {
+        (0..num_runs)
+            .into_par_iter()
+            .map(|run_idx| {
+                let (start_x, start_y) = all_starting_points[run_idx];
+                let random_steps = &all_random_steps[run_idx];
+                
+                // Run SA with pre-generated samples (NO RNG)
+                run_single_sa_with_samples(
+                    start_x,
+                    start_y,
+                    random_steps,
+                    init_temp,
+                    cooling_rate,
+                    step_size,
+                    num_steps,
+                    bounds,
+                )
+            })
+            .collect()
+    });
+    
+    // Collect results
+    let mut total_reward = 0.0;
+    let mut costs = Vec::with_capacity(num_runs);
+    let mut trajectories = Vec::with_capacity(num_runs);
+    
+    for (cost, trajectory) in results {
+        costs.push(cost);
         trajectories.push(trajectory);
-        total_reward += -curr_cost;
+        total_reward += -cost;
     }
     
     // Average reward WITHOUT step penalty (penalty moved to env)
