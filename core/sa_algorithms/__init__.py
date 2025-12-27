@@ -16,4 +16,4 @@ from . import python_parallel
 from . import rust_serial
 from . import rust_parallel
 
-__all__ = ['python_serial', 'python_parallel', 'rust_serial', 'rust_parallel']
+__all__ = ["python_serial", "python_parallel", "rust_serial", "rust_parallel"]

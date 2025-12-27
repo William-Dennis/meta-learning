@@ -6,23 +6,24 @@ Available algorithms:
 - 'rust_parallel': Rust parallel implementation (recommended)
 """
 
-ALGORITHM = 'rust_parallel'
+ALGORITHM = "rust_parallel"
 
 
 def get_sa_algorithm():
     """Get the configured SA algorithm module."""
-    if ALGORITHM == 'python_serial':
+    if ALGORITHM == "python_serial":
         from core.sa_algorithms import python_serial
+
         return python_serial
-    elif ALGORITHM == 'rust_parallel':
+    elif ALGORITHM == "rust_parallel":
         from core.sa_algorithms import rust_parallel
+
         return rust_parallel
     else:
         raise ValueError(
             f"Unknown algorithm: {ALGORITHM}. "
             f"Must be 'python_serial' or 'rust_parallel'"
         )
-
 
 
 def get_algorithm_name():
