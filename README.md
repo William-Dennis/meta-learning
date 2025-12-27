@@ -15,12 +15,11 @@ This repository demonstrates using **Proximal Policy Optimization (PPO)** to aut
 pip install uv
 
 # Install dependencies
-uv venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-uv pip install numpy matplotlib torch maturin
+uv sync
 
 # Build Rust extension (optional, for better performance)
-maturin develop --release
+uv run maturin develop --release
+uv sync
 ```
 
 ### Running Experiments

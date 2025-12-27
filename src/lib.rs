@@ -123,8 +123,8 @@ fn run_sa(
         total_reward += -curr_cost;
     }
     
-    // Average reward with penalty based on number of steps
-    let avg_reward = (total_reward / num_runs as f64) - (num_steps as f64 / 1000.0) + 10.0;
+    // Average reward (no penalty or bonus)
+    let avg_reward = total_reward / num_runs as f64;
     
     // Find trajectory with median cost (representative)
     let mut sorted_indices: Vec<usize> = (0..costs.len()).collect();
@@ -227,8 +227,8 @@ fn run_sa_parallel(
     
     let total_reward: f64 = costs.iter().map(|&c| -c).sum();
     
-    // Average reward with penalty based on number of steps
-    let avg_reward = (total_reward / num_runs as f64) - (num_steps as f64 / 1000.0) + 10.0;
+    // Average reward (no penalty or bonus)
+    let avg_reward = total_reward / num_runs as f64;
     
     // Find trajectory with median cost (representative)
     let mut sorted_indices: Vec<usize> = (0..costs.len()).collect();

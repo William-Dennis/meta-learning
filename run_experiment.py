@@ -1,8 +1,9 @@
+
 import numpy as np
 import matplotlib.pyplot as plt
 from core.tuning_env import TuningEnv
 from core.ppo_agent import PPOAgent
-from core.sa_algorithms import python_serial
+from core.sa_config import get_rastrigin_2d, get_run_sa
 
 
 def init_memory():
@@ -124,14 +125,15 @@ def create_meshgrid():
     x = np.linspace(-5.12, 5.12, 100)
     y = np.linspace(-5.12, 5.12, 100)
     X, Y = np.meshgrid(x, y)
-    Z = python_serial.rastrigin_2d(X, Y)
+    Z = get_rastrigin_2d()(X, Y)
     return X, Y, Z
 
 
 def plot_trajectories_on_fig(params, bounds):
     """Plot multiple SA trajectories on current figure."""
+    run_sa = get_run_sa()
     for r in range(10):
-        _, _, traj, _ = python_serial.run_sa(
+        _, _, traj, _ = run_sa(
             params["init_temp"],
             params["cooling_rate"],
             params["step_size"],

@@ -17,9 +17,13 @@ except ImportError:
     )
 
 
-def rastrigin_2d(x, y):
-    """2D Rastrigin function (uses Rust implementation)"""
+
+import numpy as np
+
+def _rastrigin_2d_scalar(x, y):
     return sa_rust.rastrigin_2d_py(float(x), float(y))
+
+rastrigin_2d = np.vectorize(_rastrigin_2d_scalar)
 
 
 def run_sa(
