@@ -9,7 +9,7 @@ from datetime import datetime
 # =============================================================================
 # SETTINGS
 # =============================================================================
-NN_STEP = 0.1  # Controls grid resolution: 1.0 = 11 points per axis, 0.5 = 21 points, etc.
+NN_STEP = 1  # Controls grid resolution: 1.0 = 11 points per axis, 0.5 = 21 points, etc.
 # =============================================================================
 
 def main():
