@@ -4,78 +4,30 @@ Python Parallel Implementation of Simulated Annealing
 Uses multiprocessing to run multiple SA iterations in parallel.
 """
 
-import numpy as np
 from multiprocessing import Pool, cpu_count
-
-
-def rastrigin_2d(x, y):
-    """2D Rastrigin function"""
-    scale = 1.5
-    x = x / scale
-    y = y / scale
-    return 20 + x**2 - 10 * np.cos(2 * np.pi * x) + y**2 - 10 * np.cos(2 * np.pi * y)
+from ._common import (
+    rastrigin_2d, 
+    with_samples, 
+    run_single_sa_iteration,
+    compute_result
+)
 
 
 def _run_single_sa(args):
-    """
-    Run a single SA optimization (helper function for parallel execution).
+    """Helper function for parallel execution."""
+    (init_temp, cooling_rate, step_size, num_steps, bounds, run_idx, 
+     starting_points, random_steps, acceptance_probs) = args
     
-    Args:
-        args: Tuple of (init_temp, cooling_rate, step_size, num_steps, bounds, run_idx, 
-                        starting_points, random_steps, acceptance_probs)
-        
-    Returns:
-        tuple: (final_cost, trajectory)
-    """
-    init_temp, cooling_rate, step_size, num_steps, bounds, run_idx, starting_points, random_steps, acceptance_probs = args
-    
-    # Get starting position from pre-computed samples
-    curr_x, curr_y = starting_points[run_idx]
-    curr_cost = rastrigin_2d(curr_x, curr_y)
-    best_cost = curr_cost
-    
-    curr_temp = init_temp
-    
-    trajectory = []
-    trajectory.append((curr_x, curr_y, curr_cost))
-    
-    for step_idx in range(num_steps):
-        # Use pre-computed random steps
-        dx = random_steps[step_idx, run_idx, 0] * step_size
-        dy = random_steps[step_idx, run_idx, 1] * step_size
-        
-        cand_x = np.clip(curr_x + dx, bounds[0], bounds[1])
-        cand_y = np.clip(curr_y + dy, bounds[0], bounds[1])
-        cand_cost = rastrigin_2d(cand_x, cand_y)
-        
-        # Acceptance criterion
-        delta = cand_cost - curr_cost
-        accepted = False
-        if delta < 0:
-            accepted = True
-        else:
-            prob = np.exp(-delta / curr_temp) if curr_temp > 1e-9 else 0.0
-            # Use pre-computed acceptance probability
-            if acceptance_probs[step_idx, run_idx] < prob:
-                accepted = True
-        
-        if accepted:
-            curr_x = cand_x
-            curr_y = cand_y
-            curr_cost = cand_cost
-            if curr_cost < best_cost:
-                best_cost = curr_cost
-        
-        trajectory.append((curr_x, curr_y, curr_cost))
-        
-        # Cool down
-        curr_temp *= cooling_rate
-    
-    return curr_cost, trajectory
+    return run_single_sa_iteration(
+        run_idx, init_temp, cooling_rate, step_size, num_steps, bounds,
+        starting_points, random_steps, acceptance_probs
+    )
 
 
-def run_sa(init_temp, cooling_rate, step_size, num_steps, bounds, seed=None, num_runs=10, num_threads=None,
-           starting_points=None, random_steps=None, acceptance_probs=None):
+@with_samples
+def run_sa(init_temp, cooling_rate, step_size, num_steps, bounds, seed=None, 
+           num_runs=10, num_threads=None, starting_points=None, random_steps=None, 
+           acceptance_probs=None):
     """
     Run Simulated Annealing algorithm (parallel version).
     
@@ -85,51 +37,29 @@ def run_sa(init_temp, cooling_rate, step_size, num_steps, bounds, seed=None, num
         step_size (float): Standard deviation for random walk
         num_steps (int): Total number of SA iterations per run
         bounds (tuple): (min, max) bounds for search space
-        seed (int, optional): Random seed for reproducibility (ignored - uses pre-computed samples)
+        seed (int, optional): Random seed (ignored - uses pre-computed samples)
         num_runs (int): Number of independent SA runs to average over
-        num_threads (int, optional): Number of parallel processes (defaults to CPU count)
-        starting_points (ndarray, optional): Pre-computed starting points, shape (num_runs, 2)
-        random_steps (ndarray, optional): Pre-computed random steps, shape (num_steps, num_runs, 2)
-        acceptance_probs (ndarray, optional): Pre-computed acceptance probabilities, shape (num_steps, num_runs)
+        num_threads (int, optional): Number of parallel processes
+        starting_points (ndarray, optional): Pre-computed starting points
+        random_steps (ndarray, optional): Pre-computed random steps
+        acceptance_probs (ndarray, optional): Pre-computed acceptance probs
         
     Returns:
         tuple: (avg_reward, costs, trajectory, median_idx)
-            - avg_reward: Average reward across all runs
-            - costs: List of final costs for each run
-            - trajectory: Trajectory of the median cost run [(x, y, cost), ...]
-            - median_idx: Index of the run with median cost
     """
     if num_threads is None:
         num_threads = cpu_count()
     
-    # Load samples if not provided
-    if starting_points is None or random_steps is None or acceptance_probs is None:
-        from ..random_sampling import load_random_samples
-        starting_points, random_steps, acceptance_probs = load_random_samples()
-    
-    # Prepare arguments for each run with run indices
     args_list = [
         (init_temp, cooling_rate, step_size, num_steps, bounds, i, 
          starting_points, random_steps, acceptance_probs)
         for i in range(num_runs)
     ]
     
-    # Run in parallel
     with Pool(processes=num_threads) as pool:
         results = pool.map(_run_single_sa, args_list)
     
-    # Unpack results
     costs = [r[0] for r in results]
     trajectories = [r[1] for r in results]
     
-    total_reward = sum(-c for c in costs)
-    
-    # Average reward (no penalty - penalty is handled in environment)
-    avg_reward = (total_reward / num_runs)
-    
-    # Store trajectory of the run with median cost (representative)
-    sorted_indices = np.argsort(costs)
-    median_idx = sorted_indices[len(costs)//2]
-    last_trajectory = trajectories[median_idx]
-    
-    return avg_reward, costs, last_trajectory, median_idx
+    return compute_result(costs, trajectories, num_runs)
