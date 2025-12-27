@@ -29,7 +29,7 @@ maturin develop --release
 # Run PPO training to tune SA hyperparameters
 python run_experiment.py
 
-# Run grid search (simplified version)
+# Run grid search over SA hyperparameters
 python run_grid_search.py
 ```
 

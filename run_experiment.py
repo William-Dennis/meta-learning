@@ -128,13 +128,8 @@ def create_meshgrid():
     return X, Y, Z
 
 
-def plot_trajectory(params, idx, pct, bounds):
-    """Plot SA trajectory for given parameters."""
-    X, Y, Z = create_meshgrid()
-    plt.figure(figsize=(8, 6))
-    plt.contourf(X, Y, Z, levels=50, cmap="viridis", alpha=0.9)
-    plt.colorbar(label="Cost")
-
+def plot_trajectories_on_fig(params, bounds):
+    """Plot multiple SA trajectories on current figure."""
     for r in range(10):
         _, _, traj, _ = python_serial.run_sa(
             params["init_temp"],
@@ -148,6 +143,16 @@ def plot_trajectory(params, idx, pct, bounds):
         if len(traj) > 0:
             plt.plot(traj[:, 0], traj[:, 1], "w-", alpha=0.4, linewidth=1)
             plt.plot(traj[-1, 0], traj[-1, 1], "rx", markersize=6)
+
+
+def plot_trajectory(params, idx, pct, bounds):
+    """Plot SA trajectory for given parameters."""
+    X, Y, Z = create_meshgrid()
+    plt.figure(figsize=(8, 6))
+    plt.contourf(X, Y, Z, levels=50, cmap="viridis", alpha=0.9)
+    plt.colorbar(label="Cost")
+
+    plot_trajectories_on_fig(params, bounds)
 
     title = f"Trajectory {pct}% (Ep {idx})\n"
     title += f"T0={params['init_temp']:.1f}, α={params['cooling_rate']:.3f}, "
