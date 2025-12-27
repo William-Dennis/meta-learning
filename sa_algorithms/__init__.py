@@ -13,7 +13,12 @@ All implementations provide the same interface:
 
 from . import python_serial
 from . import python_parallel
-from . import rust_serial
-from . import rust_parallel
 
-__all__ = ['python_serial', 'python_parallel', 'rust_serial', 'rust_parallel']
+# Import Rust implementations if available
+try:
+    from . import rust_serial
+    from . import rust_parallel
+    __all__ = ['python_serial', 'python_parallel', 'rust_serial', 'rust_parallel']
+except ImportError:
+    # Rust not available
+    __all__ = ['python_serial', 'python_parallel']

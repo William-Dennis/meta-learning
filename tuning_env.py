@@ -67,16 +67,15 @@ class TuningEnv:
         
         from sa_config import run_sa
         
-        # Generate a seed for this run to ensure reproducibility if needed 
-        # but continuing the stream of the env's RNG.
-        run_seed = self.np_random.integers(0, 2**32)
-        
-        # Run SA
+        # Run SA (seed parameter ignored - uses run_idx internally)
         avg_reward, costs, last_trajectory, median_idx = run_sa(
-            init_temp, cooling_rate, step_size, num_steps, self.bounds, seed=run_seed, num_runs=100
+            init_temp, cooling_rate, step_size, num_steps, self.bounds, seed=None, num_runs=100
         )
 
-        avg_reward = avg_reward
+        # Add step penalty here (moved from SA algorithms)
+        # Penalize using more steps to encourage efficiency
+        step_penalty = num_steps / 1000.0
+        final_reward = avg_reward - step_penalty + 10.0
 
         self.last_trajectory = last_trajectory
         
@@ -91,4 +90,4 @@ class TuningEnv:
             'mean_cost': np.mean(costs)
         }
         
-        return np.array([0.0], dtype=np.float32), avg_reward, True, False, info
+        return np.array([0.0], dtype=np.float32), final_reward, True, False, info
