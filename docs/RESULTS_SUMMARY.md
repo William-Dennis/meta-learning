@@ -22,9 +22,10 @@ Successfully replaced the Python Simulated Annealing algorithm with a high-perfo
 - ~91x speedup over serial Python
 
 ### 4. Rust Parallel (`sa_algorithms/rust_parallel.py`)
-- Rust implementation with native threads
-- Parallel execution without GIL limitations
-- ~171x speedup over serial Python
+- Rust implementation via PyO3
+- **Currently SERIAL execution** (not truly parallel)
+- Name kept for API compatibility
+- ~171x speedup over serial Python (from Rust speed, not parallelism)
 
 ## Performance Results
 
@@ -65,15 +66,16 @@ Successfully replaced the Python Simulated Annealing algorithm with a high-perfo
 - Rust Serial: **91.39x**
 - Rust Parallel: **170.75x**
 
-**Parallelization Efficiency:**
-- Python multiprocessing: 1.69x speedup from parallelization
-- Rust native threads: 1.87x speedup from parallelization
+**Parallelization Analysis:**
+- Python multiprocessing: ~1.69x speedup from parallelization
+- Rust "parallel": Despite the name, it's serial. Speedup is from Rust's performance, not parallelism
 
 **Key Findings:**
 - Rust is consistently **~90-100x faster** than Python even in serial mode
-- Rust parallel achieves **~170x speedup** - making 10,000 steps execute in 0.04s vs 9.6s
+- Rust "parallel" achieves **~170x speedup** - name is misleading as it's serial, but Rust is fast enough
 - Python multiprocessing provides modest gains (~2x) but limited by GIL and IPC overhead
-- Rust parallel scales better due to native threads without GIL limitations
+- **All implementations use deterministic acceptance** (prob > 0.5 threshold, not probabilistic)
+- **All implementations produce identical results** (fully reproducible)
 
 ## Technical Implementation
 
@@ -82,8 +84,8 @@ Successfully replaced the Python Simulated Annealing algorithm with a high-perfo
 1. **Rust Core** (`src/lib.rs`)
    - Rust 1.92.0
    - PyO3 0.22 for Python bindings
-   - rand/rand_chacha for RNG
-   - Native threading for parallelization
+   - NO RNG (uses Python's UnifiedRandomSampler)
+   - Serial execution (despite "parallel" function name)
 
 2. **Python Wrapper** (`sa_algorithms/`)
    - Clean, uniform interface across all implementations
@@ -167,14 +169,30 @@ avg_reward, costs, trajectory, median_idx = rust_parallel.run_sa(
 3. **Easy Integration**: Drop-in replacement for existing code
 4. **Type Safety**: Rust's type system prevents entire classes of bugs
 5. **Memory Safety**: No segfaults, buffer overflows, or data races
-6. **Parallelization**: True parallel execution without Python GIL
+6. **Parallelization**: Rust implementation is serial but fast (see note below)
 7. **Package Management**: Modern UV tooling for fast dependency resolution
+8. **Deterministic Results**: All implementations produce identical, reproducible results
+
+## Important Notes
+
+### Deterministic Acceptance Criterion
+
+**This implementation uses a FUNDAMENTAL algorithmic change from traditional SA:**
+
+- **Traditional SA**: Accept worse moves with probability = `exp(-delta/temp)`
+- **This Implementation**: Accept worse moves if `exp(-delta/temp) > 0.5` (deterministic)
+
+This change was made to ensure 100% reproducibility without random number generation. The threshold of 0.5 means we accept moves that have >50% probability of acceptance in traditional SA. This may affect optimization behavior compared to traditional stochastic SA.
+
+### "Parallel" Implementation Note
+
+The `rust_parallel` implementation is currently **SERIAL**, not truly parallel. The name is kept for API compatibility. True Rust-native parallelism would require pre-loading all random samples into Rust data structures, which adds Python interop overhead. The speedup comes from Rust's performance, not parallelism.
 
 ## Recommendations
 
-1. **For Production**: Use `rust_parallel` for best performance
+1. **For Production**: Use `rust_parallel` for best performance (despite serial execution)
 2. **For Development**: Use `python_serial` for debugging and understanding
-3. **For Testing**: All implementations produce equivalent results
+3. **For Testing**: All implementations produce **identical** results (fully deterministic)
 4. **For Deployment**: Include pre-built wheels or build instructions
 
 ## Future Work

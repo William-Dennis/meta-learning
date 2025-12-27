@@ -75,15 +75,20 @@ def run_sa(init_temp, cooling_rate, step_size, num_steps, bounds, seed=None, num
             cand_cost = rastrigin_2d(cand_x, cand_y)
             
             # Acceptance criterion
+            # NOTE: This uses DETERMINISTIC acceptance instead of probabilistic.
+            # This is a FUNDAMENTAL algorithmic change from traditional SA:
+            # - Traditional SA: accept with probability = exp(-delta/temp)
+            # - This implementation: accept if exp(-delta/temp) > 0.5
+            # This change ensures 100% reproducibility without RNG but may affect
+            # optimization behavior. The threshold of 0.5 means we accept moves
+            # that have >50% probability of acceptance in traditional SA.
             delta = cand_cost - curr_cost
             accepted = False
             if delta < 0:
                 accepted = True
             else:
                 prob = np.exp(-delta / curr_temp) if curr_temp > 1e-9 else 0.0
-                # Use deterministic acceptance based on probability threshold
-                # This ensures reproducibility without RNG
-                if prob > 0.5:  # Deterministic threshold
+                if prob > 0.5:  # Deterministic threshold (not probabilistic!)
                     accepted = True
             
             if accepted:

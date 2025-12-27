@@ -79,14 +79,17 @@ def get_cached_result(conn, nn_params, seed, num_sa_runs):
     """
     Check if a result is already cached based on NN-space parameters.
     Returns mean_cost if found, None otherwise.
+    
+    Uses tolerance-based comparison for floating-point values to avoid
+    issues with floating-point precision and rounding errors.
     """
     cursor = conn.cursor()
     cursor.execute('''
         SELECT mean_cost FROM results 
-        WHERE nn_init_temp = ?
-          AND nn_cooling_rate = ?
-          AND nn_step_size = ?
-          AND nn_num_steps = ?
+        WHERE abs(nn_init_temp - ?) < 1e-9
+          AND abs(nn_cooling_rate - ?) < 1e-9
+          AND abs(nn_step_size - ?) < 1e-9
+          AND abs(nn_num_steps - ?) < 1e-9
           AND seed = ?
           AND num_sa_runs = ?
         LIMIT 1
@@ -96,28 +99,6 @@ def get_cached_result(conn, nn_params, seed, num_sa_runs):
     
     result = cursor.fetchone()
     return result[0] if result else None
-
-# def get_cached_result(conn, nn_params, seed, num_sa_runs):
-#     """
-#     Check if a result is already cached based on NN-space parameters.
-#     Returns mean_cost if found, None otherwise.
-#     """
-#     cursor = conn.cursor()
-#     cursor.execute('''
-#         SELECT mean_cost FROM results 
-#         WHERE abs(nn_init_temp - ?) < 1e-9
-#           AND abs(nn_cooling_rate - ?) < 1e-9
-#           AND abs(nn_step_size - ?) < 1e-9
-#           AND abs(nn_num_steps - ?) < 1e-9
-#           AND seed = ?
-#           AND num_sa_runs = ?
-#         LIMIT 1
-#     ''', (nn_params['init_temp'], nn_params['cooling_rate'], 
-#           nn_params['step_size'], nn_params['num_steps'],
-#           seed, num_sa_runs))
-    
-#     result = cursor.fetchone()
-#     return result[0] if result else None
 
 
 def save_result_immediately(conn, nn_params, actual_params, seed, num_sa_runs, mean_cost):

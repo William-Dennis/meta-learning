@@ -45,6 +45,13 @@ fn run_single_sa_with_samples(
         let cand_cost = rastrigin_2d(cand_x, cand_y);
         
         // Accept?
+        // NOTE: This uses DETERMINISTIC acceptance instead of probabilistic.
+        // This is a FUNDAMENTAL algorithmic change from traditional SA:
+        // - Traditional SA: accept with probability = exp(-delta/temp)
+        // - This implementation: accept if exp(-delta/temp) > 0.5
+        // This change ensures 100% reproducibility without RNG but may affect
+        // optimization behavior. The threshold of 0.5 means we accept moves
+        // that have >50% probability of acceptance in traditional SA.
         let delta = cand_cost - curr_cost;
         let accepted = if delta < 0.0 {
             true
@@ -54,9 +61,7 @@ fn run_single_sa_with_samples(
             } else {
                 0.0
             };
-            // Use deterministic acceptance based on probability threshold
-            // This ensures reproducibility without RNG
-            prob > 0.5
+            prob > 0.5  // Deterministic threshold (not probabilistic!)
         };
         
         if accepted {
@@ -161,7 +166,13 @@ fn run_sa(
     Ok((avg_reward, costs, last_trajectory, median_idx))
 }
 
-/// Run Simulated Annealing algorithm (parallel version)
+/// Run Simulated Annealing algorithm (Rust "parallel" version)
+/// 
+/// NOTE: Despite the "parallel" name, this implementation is currently SERIAL.
+/// The name is kept for API compatibility and reflects that Rust execution is fast
+/// enough to compete with parallel Python implementations. True Rust-native 
+/// parallelism would require pre-loading all random samples into Rust data structures,
+/// which is not implemented due to the Python interop overhead.
 /// 
 /// Uses ONLY pre-generated random samples from Python UnifiedRandomSampler.
 /// NO random number generation occurs in this function.
@@ -174,7 +185,7 @@ fn run_sa(
 ///     bounds: (min, max) bounds for search space
 ///     seed: Ignored - uses run index for deterministic sampling
 ///     num_runs: Number of SA runs to average over
-///     num_threads: Number of parallel threads (optional, defaults to CPU count)
+///     num_threads: Ignored - implementation is serial
 /// 
 /// Returns:
 ///     (avg_reward, costs, trajectory, median_idx)
@@ -200,9 +211,9 @@ fn run_sa_parallel(
     let mut costs = Vec::with_capacity(num_runs);
     let mut trajectories: Vec<Vec<(f64, f64, f64)>> = Vec::with_capacity(num_runs);
     
-    // Note: For true parallelism with Rust threads, we'd need to pass the random samples
-    // as Rust data structures. For now, using serial implementation.
-    // The "parallel" speedup comes from the Rust implementation itself being faster.
+    // NOTE: This is a SERIAL implementation. The speedup comes from Rust's performance,
+    // not from parallelism. True parallel execution would require loading all random
+    // samples upfront to avoid Python GIL contention during parallel execution.
     
     for run_idx in 0..num_runs {
         // Get pre-generated starting point (NO RNG)
