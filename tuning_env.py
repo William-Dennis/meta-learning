@@ -65,7 +65,7 @@ class TuningEnv:
         step_size = nn_output_to_param(action[2], 'step_size')
         num_steps = nn_output_to_param(action[3], 'num_steps')
         
-        from sa_algorithm import run_sa
+        from sa_config import run_sa
         
         # Generate a seed for this run to ensure reproducibility if needed 
         # but continuing the stream of the env's RNG.
