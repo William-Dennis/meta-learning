@@ -21,7 +21,7 @@ def run_single_config(init_temp, cooling_rate, step_size, num_steps):
 
 def process_config(temp, cool, step, count, total):
     """Process a single configuration."""
-    mean_cost, std_cost = run_single_config(temp, cool, step, 100)
+    mean_cost, std_cost = run_single_config(temp, cool, step, 100) # fix num_steps to 100
 
     result = {
         "temp": temp,
