@@ -4,18 +4,18 @@
 
 
 ### Visualisation of the hyperparameter space
-
-![Cooling rate vs number of steps](heatmaps/heatmap_cooling_rate_vs_num_steps.png)
-
-![Cooling rate vs step size](heatmaps/heatmap_cooling_rate_vs_step_size.png)
-
-![Initial temperature vs cooling rate](heatmaps/heatmap_init_temp_vs_cooling_rate.png)
-
-![Initial temperature vs number of steps](heatmaps/heatmap_init_temp_vs_num_steps.png)
-
-![Initial temperature vs step size](heatmaps/heatmap_init_temp_vs_step_size.png)
-
-![Step size vs number of steps](heatmaps/heatmap_step_size_vs_num_steps.png)
+<table>
+  <tr>
+    <td><img src="heatmaps/heatmap_cooling_rate_vs_num_steps.png" width="100%"></td>
+    <td><img src="heatmaps/heatmap_cooling_rate_vs_step_size.png" width="100%"></td>
+    <td><img src="heatmaps/heatmap_init_temp_vs_cooling_rate.png" width="100%"></td>
+  </tr>
+  <tr>
+    <td><img src="heatmaps/heatmap_init_temp_vs_num_steps.png" width="100%"></td>
+    <td><img src="heatmaps/heatmap_init_temp_vs_step_size.png" width="100%"></td>
+    <td><img src="heatmaps/heatmap_step_size_vs_num_steps.png" width="100%"></td>
+  </tr>
+</table>
 
 
 More updates coming soon
