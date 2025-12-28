@@ -34,7 +34,7 @@ def run_sa(
         trajectories.append(traj)
         total_reward += -cost
 
-    avg_reward = (total_reward / num_runs)
+    avg_reward = total_reward / num_runs
 
     sorted_indices = np.argsort(costs)
     median_idx = sorted_indices[len(costs) // 2]

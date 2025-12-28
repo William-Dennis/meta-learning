@@ -51,10 +51,10 @@ class TuningEnv:
         params = self._get_params(action)
 
         from core.sa_config import get_run_sa
+
         run_sa = get_run_sa()
 
         run_seed = self.np_random.integers(0, 2**32)
-
 
         avg_reward, costs, trajectory, median_idx = run_sa(
             params["init_temp"],

@@ -17,11 +17,12 @@ except ImportError:
     )
 
 
-
 import numpy as np
+
 
 def _rastrigin_2d_scalar(x, y):
     return sa_rust.rastrigin_2d_py(float(x), float(y))
+
 
 rastrigin_2d = np.vectorize(_rastrigin_2d_scalar)
 

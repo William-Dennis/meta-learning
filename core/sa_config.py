@@ -31,13 +31,14 @@ def get_algorithm_name():
     return ALGORITHM
 
 
-
 def get_run_sa():
     sa = get_sa_algorithm()
     return sa.run_sa
 
+
 def get_rastrigin_2d():
     sa = get_sa_algorithm()
     return sa.rastrigin_2d
+
 
 print(f"[SA Config] Using algorithm: {ALGORITHM}")
