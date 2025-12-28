@@ -54,12 +54,11 @@ def init_training():
     return env, agent
 
 
-def train_tuner():
-    """Train PPO agent to tune SA hyperparameters."""
+def train_tuner(max_episodes = 1000, update_timestep = 10):
+    """Train PPO agent to tune SA hyperparameters.
+    NOTE: update_timestep = 1 currently breaks training. Need to investigate + fix"""
     env, agent = init_training()
 
-    max_episodes = 100000
-    update_timestep = 10 # TODO: this always breaks when set to 1
     memory = init_memory()
     history_rewards = []
     history_params = []
