@@ -41,20 +41,23 @@ class TuningEnv:
         self.bounds = [-5.12, 5.12]
         self.np_random = np.random.default_rng(self.seed)
         self.last_trajectory = []
-        self.run_sa = get_run_sa()
+        self.optim = get_run_sa()
 
     def reset(self, seed=None):
         self.np_random = np.random.default_rng(seed if seed is not None else self.seed)
         return np.array([0.0], dtype=np.float32), {}
 
     def step(self, action):
-        """Execute one SA run with the given action."""
+        """Execute one SA run with the given action.
+        TODO: eventually we want this to be optimiser agnostic. Where _get_params directly feeds into self.optim
+        """
         action = np.clip(action, -5.0, 5.0)
         params = self._get_params(action)
 
         run_seed = self.np_random.integers(0, 2**32)
+        #run_seed = self.seed # fixed seed for more stable training
 
-        avg_reward, costs, trajectory, median_idx = self.run_sa(
+        avg_reward, costs, trajectory, median_idx = self.optim(
             params["init_temp"],
             params["cooling_rate"],
             params["step_size"],
@@ -64,8 +67,8 @@ class TuningEnv:
             num_runs=100,
         )
 
-        # Apply num_steps penalty here
-        # avg_reward -= (params["num_steps"] / 1000)
+        # Apply penalties here
+        avg_reward -= params["num_steps"] * 1e-3
         avg_reward -= np.std(costs) * 1e-3
 
         self.last_trajectory = trajectory
