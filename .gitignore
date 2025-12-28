@@ -12,9 +12,13 @@ Cargo.lock
 **/*.rs.bk
 *.pdb
 
-# Random sampling data (large binary files)
-data/starting_points.npy
-data/random_steps.npy
+# Outputs directory (generated files)
+outputs/*.png
+outputs/*.pdf
+outputs/*.csv
+
+# Database files
+*.db
 
 # Distribution / packaging
 .Python
