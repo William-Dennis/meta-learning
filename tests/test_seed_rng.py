@@ -40,6 +40,7 @@ def test_that_rust_seed_rng_is_deterministic():
     )
 
     # Check that results are identical, sorting is due to possible non-deterministic ordering
+    assert avg_reward1 == avg_reward2, "Average rewards differ between runs with same seed"
     assert np.array_equal(np.sort(costs1), np.sort(costs2)), "Costs differ between runs with same seed"
     assert np.array_equal(np.sort(trajectory1), np.sort(trajectory2)), "Trajectories differ between runs with same seed"
     assert costs1[median_idx1] == costs2[median_idx2], "Median values differ between runs with same seed"
@@ -64,6 +65,7 @@ def test_that_python_seed_rng_is_deterministic():
     )
 
     # Check that results are identical
+    assert avg_reward1 == avg_reward2, "Average rewards differ between runs with same seed"
     assert np.array_equal(np.sort(costs1), np.sort(costs2)), "Costs differ between runs with same seed"
     assert np.array_equal(np.sort(trajectory1), np.sort(trajectory2)), "Trajectories differ between runs with same seed"
     assert costs1[median_idx1] == costs2[median_idx2], "Median values differ between runs with same seed"
