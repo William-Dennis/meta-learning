@@ -1,8 +1,6 @@
 # Meta-Learning
 
-Question: *Can we use meta-learning to improve the sample efficiency of another optimization algorithm?*
-
-We use **Proximal Policy Optimization (PPO)** to automatically tune **Simulated Annealing (SA)** hyperparameters to explore this.
+**Proximal Policy Optimization (PPO)** is used to automatically tune **Simulated Annealing (SA)** hyperparameters.
 
 More updates coming soon
 - PPO to tune PPO?
