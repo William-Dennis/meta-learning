@@ -5,6 +5,7 @@ This repository demonstrates using **Proximal Policy Optimization (PPO)** to aut
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - Python 3.12+
 - UV package manager
 
@@ -54,6 +55,7 @@ meta-learning/
 ## 🎯 Algorithm Selection
 
 The repository includes two SA implementations:
+
 - **python_serial**: Pure Python implementation (baseline)
 - **rust_parallel**: Rust parallel implementation (recommended for speed)
 
@@ -75,6 +77,7 @@ ALGORITHM = 'rust_parallel'  # or 'python_serial'
 ## 📊 Outputs
 
 All generated outputs are saved in the `outputs/` directory:
+
 - Training curves
 - Parameter evolution plots
 - Trajectory visualizations
@@ -96,7 +99,3 @@ uv pip install <package>
 - All randomness is controlled via the `seed` parameter
 - Functions are kept simple (≤ 30 lines)
 - Code follows clean, minimal design principles
-
-## 📄 License
-
-See [LICENSE](LICENSE) file.
