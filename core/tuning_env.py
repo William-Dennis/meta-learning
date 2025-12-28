@@ -1,4 +1,5 @@
 import numpy as np
+from core.sa_config import get_run_sa
 
 
 class Box:
@@ -40,6 +41,7 @@ class TuningEnv:
         self.bounds = [-5.12, 5.12]
         self.np_random = np.random.default_rng(self.seed)
         self.last_trajectory = []
+        self.run_sa = get_run_sa()
 
     def reset(self, seed=None):
         self.np_random = np.random.default_rng(seed if seed is not None else self.seed)
@@ -50,13 +52,9 @@ class TuningEnv:
         action = np.clip(action, -5.0, 5.0)
         params = self._get_params(action)
 
-        from core.sa_config import get_run_sa
-
-        run_sa = get_run_sa()
-
         run_seed = self.np_random.integers(0, 2**32)
 
-        avg_reward, costs, trajectory, median_idx = run_sa(
+        avg_reward, costs, trajectory, median_idx = self.run_sa(
             params["init_temp"],
             params["cooling_rate"],
             params["step_size"],
