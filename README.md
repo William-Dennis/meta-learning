@@ -1,8 +1,13 @@
-# Meta-Learning using Simulated Annealing
-
-This repository demonstrates using **Proximal Policy Optimization (PPO)** to automatically tune **Simulated Annealing (SA)** hyperparameters for minimizing the 2D Rastrigin function.
+# Meta-Learning
 
 Question: *Can we use meta-learning to improve the sample efficiency of another optimization algorithm?*
+
+We use **Proximal Policy Optimization (PPO)** to automatically tune **Simulated Annealing (SA)** hyperparameters to explore this.
+
+More updates coming soon
+- PPO to tune PPO?
+- Other benchmarks, not just Rastrigin function
+
 
 Python 3.12+
 
