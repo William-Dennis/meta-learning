@@ -8,6 +8,20 @@ __pycache__/
 # C extensions
 *.so
 
+# Rust build artifacts
+/target/
+Cargo.lock
+**/*.rs.bk
+*.pdb
+
+# Outputs directory (generated files)
+outputs/*.png
+outputs/*.pdf
+outputs/*.csv
+
+# Database files
+*.db
+
 # Distribution / packaging
 .Python
 build/

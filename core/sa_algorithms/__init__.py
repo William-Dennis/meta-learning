@@ -1,0 +1,12 @@
+"""
+SA Algorithms Package
+
+This package contains 4 implementations of the Simulated Annealing algorithm:
+1. python_serial: Pure Python serial implementation
+2. rust_parallel: Rust parallel implementation via PyO3 with Rust threads
+
+All implementations provide the same interface:
+    run_sa(init_temp, cooling_rate, step_size, num_steps, bounds, seed=None, num_runs=10)
+"""
+
+__all__ = ["python_serial", "rust_parallel"]
