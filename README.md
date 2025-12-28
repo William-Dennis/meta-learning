@@ -2,12 +2,9 @@
 
 This repository demonstrates using **Proximal Policy Optimization (PPO)** to automatically tune **Simulated Annealing (SA)** hyperparameters for minimizing the 2D Rastrigin function.
 
-## 🚀 Quick Start
+Question: *Can we use meta-learning to improve the sample efficiency of another optimization algorithm?*
 
-### Prerequisites
-
-- Python 3.12+
-- UV package manager
+Python 3.12+
 
 ### Installation
 
@@ -33,7 +30,7 @@ python run_experiment.py
 python run_grid_search.py
 ```
 
-## 📁 Repository Structure
+### Repo Structure
 
 ```
 meta-learning/
@@ -51,51 +48,3 @@ meta-learning/
 │   └── lib.rs            # Rust SA implementation
 └── README.md             # This file
 ```
-
-## 🎯 Algorithm Selection
-
-The repository includes two SA implementations:
-
-- **python_serial**: Pure Python implementation (baseline)
-- **rust_parallel**: Rust parallel implementation (recommended for speed)
-
-To switch algorithms, edit `core/sa_config.py`:
-
-```python
-ALGORITHM = 'rust_parallel'  # or 'python_serial'
-```
-
-## 🔑 Key Features
-
-- ✅ Simple, clean codebase
-- ✅ PPO-based hyperparameter tuning
-- ✅ Rust acceleration for performance
-- ✅ Automatic output organization
-- ✅ Seed-based reproducibility
-- ✅ All functions ≤ 30 lines
-
-## 📊 Outputs
-
-All generated outputs are saved in the `outputs/` directory:
-
-- Training curves
-- Parameter evolution plots
-- Trajectory visualizations
-- Performance metrics
-
-## 🛠️ Development
-
-**Always use UV for dependency management:**
-
-```bash
-# Add a new dependency
-uv pip install <package>
-
-# Never use pip directly except to install UV itself
-```
-
-## 📝 Notes
-
-- All randomness is controlled via the `seed` parameter
-- Functions are kept simple (≤ 30 lines)
-- Code follows clean, minimal design principles
