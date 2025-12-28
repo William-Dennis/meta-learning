@@ -92,9 +92,9 @@ class PPOAgent:
 
     def update(self, memory):
         """Update policy using PPO."""
-        old_states = torch.FloatTensor(np.array(memory["states"]))
-        old_actions = torch.FloatTensor(np.array(memory["actions"]))
-        old_log_probs = torch.FloatTensor(np.array(memory["log_probs"]))
+        old_states = torch.tensor(memory["states"], dtype=torch.float32)
+        old_actions = torch.tensor(memory["actions"], dtype=torch.float32)
+        old_log_probs = torch.tensor(memory["log_probs"], dtype=torch.float32)
 
         returns = self._compute_returns(memory["rewards"], memory["is_terminals"])
         returns = (returns - returns.mean()) / (returns.std() + 1e-7)
