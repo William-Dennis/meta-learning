@@ -2,9 +2,14 @@
 
 **Proximal Policy Optimization (PPO)** is used to automatically tune **Simulated Annealing (SA)** hyperparameters.
 
+
+### Visualisation of the hyperparameter space
+
+
 More updates coming soon
 - PPO to tune PPO?
 - Other benchmarks, not just Rastrigin function
+- Can we adjust the reward signal to not only perform well, but make the algorithm more efficient?
 
 
 Python 3.12+
