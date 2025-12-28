@@ -5,6 +5,18 @@
 
 ### Visualisation of the hyperparameter space
 
+![Cooling rate vs number of steps](heatmaps/heatmap_cooling_rate_vs_num_steps.png)
+
+![Cooling rate vs step size](heatmaps/heatmap_cooling_rate_vs_step_size.png)
+
+![Initial temperature vs cooling rate](heatmaps/heatmap_init_temp_vs_cooling_rate.png)
+
+![Initial temperature vs number of steps](heatmaps/heatmap_init_temp_vs_num_steps.png)
+
+![Initial temperature vs step size](heatmaps/heatmap_init_temp_vs_step_size.png)
+
+![Step size vs number of steps](heatmaps/heatmap_step_size_vs_num_steps.png)
+
 
 More updates coming soon
 - PPO to tune PPO?
