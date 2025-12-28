@@ -59,7 +59,7 @@ def train_tuner():
     env, agent = init_training()
 
     max_episodes = 1000
-    update_timestep = 10
+    update_timestep = 2 # TODO: this always breaks when set to 1
     memory = init_memory()
     history_rewards = []
     history_params = []

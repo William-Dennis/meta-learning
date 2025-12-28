@@ -66,6 +66,7 @@ class TuningEnv:
 
         # Apply num_steps penalty here
         # avg_reward -= (params["num_steps"] / 1000)
+        avg_reward -= np.std(costs) * 1e-3
 
         self.last_trajectory = trajectory
 
