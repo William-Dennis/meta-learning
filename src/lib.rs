@@ -4,8 +4,8 @@ use rand_chacha::ChaCha8Rng;
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-mod math;                 // declare the module
-use math::rastrigin_2d;         // import the function
+mod math;
+use math::{rastrigin_2d, quadratic_2d};
 
 
 
@@ -174,18 +174,23 @@ fn run_sa_parallel(
 }
 
 /// Rastrigin function exposed to Python for testing
-/// TODO: adjust
 #[pyfunction]
 fn rastrigin_2d_py(x: f64, y: f64) -> PyResult<f64> {
     Ok(rastrigin_2d(x, y))
 }
 
+/// Quadratic function exposed to Python for testing
+#[pyfunction]
+fn quadratic_2d_py(x: f64, y: f64) -> PyResult<f64> {
+    Ok(quadratic_2d(x, y))
+}
+
 /// A Python module implemented in Rust.
-/// TODO: adjust
 #[pymodule]
 fn sa_rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(run_sa_parallel, m)?)?;
     m.add_function(wrap_pyfunction!(rastrigin_2d_py, m)?)?;
+    m.add_function(wrap_pyfunction!(quadratic_2d_py, m)?)?;
     Ok(())
 }
 
