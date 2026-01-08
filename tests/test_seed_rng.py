@@ -1,7 +1,5 @@
-import sys
-import os
-# Ensure project root is in sys.path for direct execution
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from helper import set_wd
+set_wd()
 
 from core.sa_algorithms import python_serial, rust_parallel
 import numpy as np
