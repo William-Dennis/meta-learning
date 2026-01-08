@@ -9,10 +9,17 @@ from core.math import rastrigin_2d
 
 
 def run_sa(
-    init_temp, cooling_rate, step_size, num_steps, bounds, seed=None, num_runs=10, function=None
+    init_temp,
+    cooling_rate,
+    step_size,
+    num_steps,
+    bounds,
+    seed=None,
+    num_runs=10,
+    function=None,
 ):
     """Run Simulated Annealing algorithm (serial version).
-    
+
     Args:
         init_temp: Initial temperature
         cooling_rate: Temperature decay rate per step
@@ -22,7 +29,7 @@ def run_sa(
         seed: Random seed (optional)
         num_runs: Number of SA runs to average over
         function: Objective function to optimize (default: rastrigin_2d)
-    
+
     Returns:
         (avg_reward, costs, last_trajectory, median_idx)
     """
@@ -52,7 +59,9 @@ def run_sa(
     return avg_reward, costs, last_trajectory, median_idx
 
 
-def _run_single_sa(init_temp, cooling_rate, step_size, num_steps, bounds, np_random, function):
+def _run_single_sa(
+    init_temp, cooling_rate, step_size, num_steps, bounds, np_random, function
+):
     """Run single SA optimization."""
     curr_x = np_random.uniform(bounds[0], bounds[1])
     curr_y = np_random.uniform(bounds[0], bounds[1])

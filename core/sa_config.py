@@ -43,15 +43,15 @@ def get_rastrigin_2d():
 
 def get_objective_function(function_name="rastrigin"):
     """Get an objective function by name.
-    
+
     Args:
         function_name: Name of the function ('rastrigin' or 'quadratic')
-        
+
     Returns:
         The objective function
     """
     from core import math as math_funcs
-    
+
     if function_name == "rastrigin":
         return math_funcs.rastrigin_2d
     elif function_name == "quadratic":

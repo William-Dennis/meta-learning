@@ -5,9 +5,11 @@ from datetime import datetime
 from core.sa_config import get_run_sa, get_objective_function
 
 
-def run_single_config(init_temp, cooling_rate, step_size, num_steps, objective_function=None):
+def run_single_config(
+    init_temp, cooling_rate, step_size, num_steps, objective_function=None
+):
     """Run SA with specific hyperparameters.
-    
+
     Args:
         init_temp: Initial temperature
         cooling_rate: Cooling rate
@@ -21,8 +23,14 @@ def run_single_config(init_temp, cooling_rate, step_size, num_steps, objective_f
 
     run_sa = get_run_sa()
     avg_reward, costs, _, _ = run_sa(
-        init_temp, cooling_rate, step_size, num_steps, bounds, seed, num_runs,
-        function=objective_function
+        init_temp,
+        cooling_rate,
+        step_size,
+        num_steps,
+        bounds,
+        seed,
+        num_runs,
+        function=objective_function,
     )
 
     return np.mean(costs), np.std(costs)
@@ -30,7 +38,7 @@ def run_single_config(init_temp, cooling_rate, step_size, num_steps, objective_f
 
 def process_config(temp, cool, step, count, total, objective_function=None):
     """Process a single configuration.
-    
+
     Args:
         temp: Initial temperature
         cool: Cooling rate
@@ -62,7 +70,7 @@ def process_config(temp, cool, step, count, total, objective_function=None):
 
 def grid_search(objective_function=None):
     """Run grid search over SA hyperparameters.
-    
+
     Args:
         objective_function: The objective function to optimize (default: rastrigin_2d)
     """
@@ -83,7 +91,14 @@ def grid_search(objective_function=None):
         for cool in cooling_values:
             for step in step_values:
                 count += 1
-                result, mean_cost = process_config(temp, cool, step, count, total, objective_function=objective_function)
+                result, mean_cost = process_config(
+                    temp,
+                    cool,
+                    step,
+                    count,
+                    total,
+                    objective_function=objective_function,
+                )
 
                 results.append(result)
 
@@ -124,7 +139,7 @@ def main():
     print("GRID SEARCH RUNNER")
     print(f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 60 + "\n")
-    
+
     # Choose which objective function to optimize
     # Options: "rastrigin" or "quadratic"
     objective_function_name = "rastrigin"

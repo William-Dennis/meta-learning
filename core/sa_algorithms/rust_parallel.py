@@ -39,9 +39,9 @@ def run_sa(
     function=None,
 ):
     """Run Simulated Annealing algorithm (Rust parallel version).
-    
+
     Supports both rastrigin_2d and quadratic_2d objective functions.
-    
+
     Args:
         init_temp: Initial temperature
         cooling_rate: Temperature decay rate per step
@@ -56,17 +56,17 @@ def run_sa(
     # Determine function name to pass to Rust
     function_name = None
     if function is not None:
-        fn_name = getattr(function, '__name__', None)
-        if fn_name == 'rastrigin_2d':
+        fn_name = getattr(function, "__name__", None)
+        if fn_name == "rastrigin_2d":
             function_name = "rastrigin"
-        elif fn_name == 'quadratic_2d':
+        elif fn_name == "quadratic_2d":
             function_name = "quadratic"
         else:
             raise ValueError(
                 f"Rust parallel implementation only supports rastrigin_2d and quadratic_2d, "
                 f"but received '{fn_name}'."
             )
-    
+
     if isinstance(bounds, list):
         bounds = tuple(bounds)
 

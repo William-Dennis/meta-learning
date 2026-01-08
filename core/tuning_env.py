@@ -42,7 +42,11 @@ class TuningEnv:
         self.np_random = np.random.default_rng(self.seed)
         self.last_trajectory = []
         self.optim = get_run_sa()
-        self.objective_function = objective_function if objective_function is not None else get_objective_function("rastrigin")
+        self.objective_function = (
+            objective_function
+            if objective_function is not None
+            else get_objective_function("rastrigin")
+        )
 
     def reset(self, seed=None):
         self.np_random = np.random.default_rng(seed if seed is not None else self.seed)
@@ -56,7 +60,7 @@ class TuningEnv:
         params = self._get_params(action)
 
         run_seed = self.np_random.integers(0, 2**32)
-        #run_seed = self.seed # fixed seed for more stable training
+        # run_seed = self.seed # fixed seed for more stable training
 
         avg_reward, costs, trajectory, median_idx = self.optim(
             params["init_temp"],

@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.distributions import Normal
+import numpy as np
 
 
 class ActorCritic(nn.Module):
@@ -91,9 +92,9 @@ class PPOAgent:
 
     def update(self, memory):
         """Update policy using PPO."""
-        old_states = torch.tensor(memory["states"], dtype=torch.float32)
-        old_actions = torch.tensor(memory["actions"], dtype=torch.float32)
-        old_log_probs = torch.tensor(memory["log_probs"], dtype=torch.float32)
+        old_states = torch.tensor(np.array(memory["states"]), dtype=torch.float32)
+        old_actions = torch.tensor(np.array(memory["actions"]), dtype=torch.float32)
+        old_log_probs = torch.tensor(np.array(memory["log_probs"]), dtype=torch.float32)
 
         returns = self._compute_returns(memory["rewards"], memory["is_terminals"])
         returns = (returns - returns.mean()) / (returns.std() + 1e-7)
