@@ -135,10 +135,8 @@ def create_meshgrid(objective_function=None):
     Args:
         objective_function: The objective function to use (default: rastrigin_2d)
     """
-    from core.math import rastrigin_2d
-    
     if objective_function is None:
-        objective_function = rastrigin_2d
+        objective_function = get_objective_function("rastrigin")
         
     x = np.linspace(-5.12, 5.12, 100)
     y = np.linspace(-5.12, 5.12, 100)

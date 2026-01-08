@@ -1,6 +1,5 @@
 import numpy as np
-from core.sa_config import get_run_sa
-from core.math import rastrigin_2d
+from core.sa_config import get_run_sa, get_objective_function
 
 
 class Box:
@@ -43,7 +42,7 @@ class TuningEnv:
         self.np_random = np.random.default_rng(self.seed)
         self.last_trajectory = []
         self.optim = get_run_sa()
-        self.objective_function = objective_function if objective_function is not None else rastrigin_2d
+        self.objective_function = objective_function if objective_function is not None else get_objective_function("rastrigin")
 
     def reset(self, seed=None):
         self.np_random = np.random.default_rng(seed if seed is not None else self.seed)

@@ -44,9 +44,11 @@ def run_sa(
     If a different function is provided, this will raise an error.
     """
     if function is not None:
-        # Check if it's the rastrigin function
-        from core.math import rastrigin_2d as py_rastrigin
-        if function != py_rastrigin:
+        # Check if it's the rastrigin function by comparing name and module
+        if not (hasattr(function, '__name__') and 
+                function.__name__ == 'rastrigin_2d' and
+                hasattr(function, '__module__') and
+                'math' in function.__module__):
             raise NotImplementedError(
                 "Rust parallel implementation currently only supports rastrigin_2d. "
                 "To use a different objective function, set ALGORITHM='python_serial' in core/sa_config.py"
