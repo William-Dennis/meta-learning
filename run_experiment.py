@@ -145,8 +145,14 @@ def create_meshgrid(objective_function=None):
     return X, Y, Z
 
 
-def plot_trajectories_on_fig(params, bounds):
-    """Plot multiple SA trajectories on current figure."""
+def plot_trajectories_on_fig(params, bounds, objective_function=None):
+    """Plot multiple SA trajectories on current figure.
+    
+    Args:
+        params: SA parameters to use
+        bounds: Search space bounds
+        objective_function: The objective function to use (default: rastrigin_2d)
+    """
     run_sa = get_run_sa()
     for r in range(10):
         _, _, traj, _ = run_sa(
@@ -156,6 +162,7 @@ def plot_trajectories_on_fig(params, bounds):
             params["num_steps"],
             bounds,
             seed=None,
+            function=objective_function,
         )
         traj = np.array(traj)
         if len(traj) > 0:
@@ -178,7 +185,7 @@ def plot_trajectory(params, idx, pct, bounds, objective_function=None):
     plt.contourf(X, Y, Z, levels=50, cmap="viridis", alpha=0.9)
     plt.colorbar(label="Cost")
 
-    plot_trajectories_on_fig(params, bounds)
+    plot_trajectories_on_fig(params, bounds, objective_function=objective_function)
 
     title = f"Trajectory {pct}% (Ep {idx})\n"
     title += f"T0={params['init_temp']:.1f}, α={params['cooling_rate']:.3f}, "
