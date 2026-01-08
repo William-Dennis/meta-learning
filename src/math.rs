@@ -1,7 +1,10 @@
+
+use std::f64::consts::PI;
+
 /// 2D Rastrigin function
 /// TODO: need to adjust
 #[inline]
-fn rastrigin_2d(x: f64, y: f64) -> f64 {
+pub fn rastrigin_2d(x: f64, y: f64) -> f64 {
     let scale = 1.5;
     let x_scaled = x / scale;
     let y_scaled = y / scale;

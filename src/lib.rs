@@ -1,7 +1,6 @@
 use pyo3::prelude::*;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
-use std::f64::consts::PI;
 use std::sync::{Arc, Mutex};
 use std::thread;
 
