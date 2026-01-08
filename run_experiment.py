@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from core.tuning_env import TuningEnv
 from core.ppo_agent import PPOAgent
-from core.sa_config import get_rastrigin_2d, get_run_sa
+from core.sa_config import get_rastrigin_2d, get_run_sa, get_objective_function
 
 
 def init_memory():
@@ -41,9 +41,13 @@ def print_progress(i, history_rewards, history_params, step):
     print(f"Trial {i} | Reward: {avg_r:.2f} | Cost: {-avg_c:.2f}")
 
 
-def init_training():
-    """Initialize training components."""
-    env = TuningEnv()
+def init_training(objective_function=None):
+    """Initialize training components.
+    
+    Args:
+        objective_function: The objective function to optimize (default: rastrigin_2d)
+    """
+    env = TuningEnv(objective_function=objective_function)
     state_dim = env.observation_space.shape[0]
     action_dim = env.action_space.shape[0]
 
@@ -54,10 +58,17 @@ def init_training():
     return env, agent
 
 
-def train_tuner(max_episodes = 1000, update_timestep = 10):
+def train_tuner(max_episodes=1000, update_timestep=10, objective_function=None):
     """Train PPO agent to tune SA hyperparameters.
-    NOTE: update_timestep = 1 currently breaks training. Need to investigate + fix"""
-    env, agent = init_training()
+    
+    Args:
+        max_episodes: Number of training episodes
+        update_timestep: How often to update the PPO agent
+        objective_function: The objective function to optimize (default: rastrigin_2d)
+    
+    NOTE: update_timestep = 1 currently breaks training. Need to investigate + fix
+    """
+    env, agent = init_training(objective_function=objective_function)
 
     memory = init_memory()
     history_rewards = []
@@ -118,12 +129,21 @@ def plot_param_evolution(params_history):
     print("Saved outputs/params_evolution.png")
 
 
-def create_meshgrid():
-    """Create meshgrid for Rastrigin visualization."""
+def create_meshgrid(objective_function=None):
+    """Create meshgrid for visualization.
+    
+    Args:
+        objective_function: The objective function to use (default: rastrigin_2d)
+    """
+    from core.math import rastrigin_2d
+    
+    if objective_function is None:
+        objective_function = rastrigin_2d
+        
     x = np.linspace(-5.12, 5.12, 100)
     y = np.linspace(-5.12, 5.12, 100)
     X, Y = np.meshgrid(x, y)
-    Z = get_rastrigin_2d()(X, Y)
+    Z = objective_function(X, Y)
     return X, Y, Z
 
 
@@ -145,9 +165,17 @@ def plot_trajectories_on_fig(params, bounds):
             plt.plot(traj[-1, 0], traj[-1, 1], "rx", markersize=6)
 
 
-def plot_trajectory(params, idx, pct, bounds):
-    """Plot SA trajectory for given parameters."""
-    X, Y, Z = create_meshgrid()
+def plot_trajectory(params, idx, pct, bounds, objective_function=None):
+    """Plot SA trajectory for given parameters.
+    
+    Args:
+        params: SA parameters to use
+        idx: Episode index
+        pct: Percentage through training
+        bounds: Search space bounds
+        objective_function: The objective function to visualize (default: rastrigin_2d)
+    """
+    X, Y, Z = create_meshgrid(objective_function=objective_function)
     plt.figure(figsize=(8, 6))
     plt.contourf(X, Y, Z, levels=50, cmap="viridis", alpha=0.9)
     plt.colorbar(label="Cost")
@@ -166,8 +194,13 @@ def plot_trajectory(params, idx, pct, bounds):
     print(f"Saved {filename}")
 
 
-def visualize_trajectory_evolution(params_history):
-    """Visualize trajectory at different training stages."""
+def visualize_trajectory_evolution(params_history, objective_function=None):
+    """Visualize trajectory at different training stages.
+    
+    Args:
+        params_history: History of SA parameters during training
+        objective_function: The objective function to visualize (default: rastrigin_2d)
+    """
     n = len(params_history)
     checkpoints = [0, int(n * 0.25), int(n * 0.50), int(n * 0.75), n - 1]
     percentages = [0, 25, 50, 75, 100]
@@ -177,12 +210,18 @@ def visualize_trajectory_evolution(params_history):
         if idx >= n:
             idx = n - 1
         params = params_history[idx]
-        plot_trajectory(params, idx, percentages[i], bounds)
+        plot_trajectory(params, idx, percentages[i], bounds, objective_function=objective_function)
 
 
-def visualize_2d(env, title="Optimization Trajectory"):
-    """Visualize 2D trajectory of SA optimization."""
-    X, Y, Z = create_meshgrid()
+def visualize_2d(env, title="Optimization Trajectory", objective_function=None):
+    """Visualize 2D trajectory of SA optimization.
+    
+    Args:
+        env: The TuningEnv instance
+        title: Plot title
+        objective_function: The objective function to visualize (default: rastrigin_2d)
+    """
+    X, Y, Z = create_meshgrid(objective_function=objective_function)
     plt.figure(figsize=(10, 8))
     plt.contourf(X, Y, Z, levels=50, cmap="viridis")
     plt.colorbar(label="Cost")
@@ -200,9 +239,14 @@ def visualize_2d(env, title="Optimization Trajectory"):
     print("Saved outputs/trajectory_2d.png")
 
 
-def evaluate_and_plot(agent):
-    """Evaluate trained agent and create visualizations."""
-    env = TuningEnv()
+def evaluate_and_plot(agent, objective_function=None):
+    """Evaluate trained agent and create visualizations.
+    
+    Args:
+        agent: The trained PPO agent
+        objective_function: The objective function to use (default: rastrigin_2d)
+    """
+    env = TuningEnv(objective_function=objective_function)
     print("\nEvaluating learned params...")
     state, _ = env.reset(seed=42)
 
@@ -220,14 +264,21 @@ def evaluate_and_plot(agent):
     )
 
     title = f"PPO Tuned SA (Cost: {costs[-1]:.2f})"
-    visualize_2d(env, title)
+    visualize_2d(env, title, objective_function=objective_function)
 
     return costs, info
 
 
 if __name__ == "__main__":
-    agent, rewards, params_history = train_tuner()
+    # Choose which objective function to optimize
+    # Options: "rastrigin" or "quadratic"
+    objective_function_name = "rastrigin"
+    objective_function = get_objective_function(objective_function_name)
+    
+    print(f"Training with objective function: {objective_function_name}")
+    
+    agent, rewards, params_history = train_tuner(objective_function=objective_function)
     plot_training_curve(rewards)
     plot_param_evolution(params_history)
-    visualize_trajectory_evolution(params_history)
-    evaluate_and_plot(agent)
+    visualize_trajectory_evolution(params_history, objective_function=objective_function)
+    evaluate_and_plot(agent, objective_function=objective_function)

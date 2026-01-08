@@ -36,8 +36,22 @@ def run_sa(
     seed=None,
     num_runs=10,
     num_threads=None,
+    function=None,
 ):
-    """Run Simulated Annealing algorithm (Rust parallel version)."""
+    """Run Simulated Annealing algorithm (Rust parallel version).
+    
+    Note: The Rust implementation currently only supports rastrigin_2d.
+    If a different function is provided, this will raise an error.
+    """
+    if function is not None:
+        # Check if it's the rastrigin function
+        from core.math import rastrigin_2d as py_rastrigin
+        if function != py_rastrigin:
+            raise NotImplementedError(
+                "Rust parallel implementation currently only supports rastrigin_2d. "
+                "To use a different objective function, set ALGORITHM='python_serial' in core/sa_config.py"
+            )
+    
     if isinstance(bounds, list):
         bounds = tuple(bounds)
 

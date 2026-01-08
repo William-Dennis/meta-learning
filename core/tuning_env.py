@@ -1,5 +1,6 @@
 import numpy as np
 from core.sa_config import get_run_sa
+from core.math import rastrigin_2d
 
 
 class Box:
@@ -34,7 +35,7 @@ def map_action_to_param(value, param_name):
 class TuningEnv:
     """Environment for tuning SA hyperparameters."""
 
-    def __init__(self, seed=42):
+    def __init__(self, seed=42, objective_function=None):
         self.seed = seed
         self.action_space = Box(low=-5.0, high=5.0, shape=(4,), dtype=np.float32)
         self.observation_space = Box(low=0.0, high=1.0, shape=(1,), dtype=np.float32)
@@ -42,6 +43,7 @@ class TuningEnv:
         self.np_random = np.random.default_rng(self.seed)
         self.last_trajectory = []
         self.optim = get_run_sa()
+        self.objective_function = objective_function if objective_function is not None else rastrigin_2d
 
     def reset(self, seed=None):
         self.np_random = np.random.default_rng(seed if seed is not None else self.seed)
@@ -65,6 +67,7 @@ class TuningEnv:
             self.bounds,
             seed=run_seed,
             num_runs=100,
+            function=self.objective_function,
         )
 
         # Apply penalties here
