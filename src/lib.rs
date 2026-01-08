@@ -6,6 +6,7 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 
 /// 2D Rastrigin function
+/// TODO: need to adjust
 #[inline]
 fn rastrigin_2d(x: f64, y: f64) -> f64 {
     let scale = 1.5;
@@ -73,66 +74,6 @@ fn run_single_sa(
     }
     
     (curr_cost, trajectory)
-}
-
-/// Run Simulated Annealing algorithm (serial version)
-/// 
-/// Args:
-///     init_temp: Initial temperature
-///     cooling_rate: Temperature decay rate per step
-///     step_size: Standard deviation for random walk
-///     num_steps: Total number of SA iterations
-///     bounds: (min, max) bounds for search space
-///     seed: Random seed (optional)
-///     num_runs: Number of SA runs to average over
-/// 
-/// Returns:
-///     (avg_reward, costs, trajectory, median_idx)
-#[pyfunction]
-#[pyo3(signature = (init_temp, cooling_rate, step_size, num_steps, bounds, seed=None, num_runs=10))]
-fn run_sa(
-    init_temp: f64,
-    cooling_rate: f64,
-    step_size: f64,
-    num_steps: usize,
-    bounds: (f64, f64),
-    seed: Option<u64>,
-    num_runs: usize,
-) -> PyResult<(f64, Vec<f64>, Vec<(f64, f64, f64)>, usize)> {
-    let mut rng: Box<dyn RngCore> = match seed {
-        Some(s) => Box::new(ChaCha8Rng::seed_from_u64(s)),
-        None => Box::new(thread_rng()),
-    };
-    
-    let mut total_reward = 0.0;
-    let mut costs = Vec::with_capacity(num_runs);
-    let mut trajectories: Vec<Vec<(f64, f64, f64)>> = Vec::with_capacity(num_runs);
-    
-    for _ in 0..num_runs {
-        let (curr_cost, trajectory) = run_single_sa(
-            &mut *rng,
-            init_temp,
-            cooling_rate,
-            step_size,
-            num_steps,
-            bounds,
-        );
-        
-        costs.push(curr_cost);
-        trajectories.push(trajectory);
-        total_reward += -curr_cost;
-    }
-    
-    // Average reward (no penalty or bonus)
-    let avg_reward = total_reward / num_runs as f64;
-    
-    // Find trajectory with median cost (representative)
-    let mut sorted_indices: Vec<usize> = (0..costs.len()).collect();
-    sorted_indices.sort_by(|&a, &b| costs[a].partial_cmp(&costs[b]).unwrap());
-    let median_idx = sorted_indices[costs.len() / 2];
-    let last_trajectory = trajectories[median_idx].clone();
-    
-    Ok((avg_reward, costs, last_trajectory, median_idx))
 }
 
 /// Run Simulated Annealing algorithm (parallel version)
@@ -240,15 +181,16 @@ fn run_sa_parallel(
 }
 
 /// Rastrigin function exposed to Python for testing
+/// TODO: adjust
 #[pyfunction]
 fn rastrigin_2d_py(x: f64, y: f64) -> PyResult<f64> {
     Ok(rastrigin_2d(x, y))
 }
 
 /// A Python module implemented in Rust.
+/// TODO: adjust
 #[pymodule]
 fn sa_rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(run_sa, m)?)?;
     m.add_function(wrap_pyfunction!(run_sa_parallel, m)?)?;
     m.add_function(wrap_pyfunction!(rastrigin_2d_py, m)?)?;
     Ok(())

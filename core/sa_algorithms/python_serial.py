@@ -8,7 +8,8 @@ import numpy as np
 
 
 def rastrigin_2d(x, y):
-    """2D Rastrigin function"""
+    """2D Rastrigin function
+    TODO: make adjustable"""
     scale = 1.5
     x = x / scale
     y = y / scale
