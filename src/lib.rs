@@ -9,6 +9,9 @@ use math::{rastrigin_2d, quadratic_2d};
 
 
 
+/// Objective function type
+type ObjectiveFunction = fn(f64, f64) -> f64;
+
 /// Run single SA optimization
 fn run_single_sa(
     mut rng: impl RngCore,
@@ -17,11 +20,12 @@ fn run_single_sa(
     step_size: f64,
     num_steps: usize,
     bounds: (f64, f64),
+    objective_fn: ObjectiveFunction,
 ) -> (f64, Vec<(f64, f64, f64)>) {
     // Random start
     let mut curr_x = rng.gen_range(bounds.0..=bounds.1);
     let mut curr_y = rng.gen_range(bounds.0..=bounds.1);
-    let mut curr_cost = rastrigin_2d(curr_x, curr_y);
+    let mut curr_cost = objective_fn(curr_x, curr_y);
     let mut best_cost = curr_cost;
     
     let mut curr_temp = init_temp;
@@ -36,7 +40,7 @@ fn run_single_sa(
         
         let cand_x = (curr_x + dx).clamp(bounds.0, bounds.1);
         let cand_y = (curr_y + dy).clamp(bounds.0, bounds.1);
-        let cand_cost = rastrigin_2d(cand_x, cand_y);
+        let cand_cost = objective_fn(cand_x, cand_y);
         
         // Accept?
         let delta = cand_cost - curr_cost;
@@ -83,11 +87,12 @@ fn run_single_sa(
 ///     seed: Random seed (optional)
 ///     num_runs: Number of SA runs to average over
 ///     num_threads: Number of parallel threads (optional, defaults to CPU count)
+///     function_name: Name of objective function ("rastrigin" or "quadratic", defaults to "rastrigin")
 /// 
 /// Returns:
 ///     (avg_reward, costs, trajectory, median_idx)
 #[pyfunction]
-#[pyo3(signature = (init_temp, cooling_rate, step_size, num_steps, bounds, seed=None, num_runs=10, num_threads=None))]
+#[pyo3(signature = (init_temp, cooling_rate, step_size, num_steps, bounds, seed=None, num_runs=10, num_threads=None, function_name=None))]
 fn run_sa_parallel(
     init_temp: f64,
     cooling_rate: f64,
@@ -97,7 +102,17 @@ fn run_sa_parallel(
     seed: Option<u64>,
     num_runs: usize,
     num_threads: Option<usize>,
+    function_name: Option<&str>,
 ) -> PyResult<(f64, Vec<f64>, Vec<(f64, f64, f64)>, usize)> {
+    // Select objective function based on name
+    let objective_fn: ObjectiveFunction = match function_name.unwrap_or("rastrigin") {
+        "rastrigin" => rastrigin_2d,
+        "quadratic" => quadratic_2d,
+        name => return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+            format!("Unknown function name: '{}'. Must be 'rastrigin' or 'quadratic'", name)
+        )),
+    };
+    
     let num_threads = num_threads.unwrap_or_else(|| thread::available_parallelism().map(|n| n.get()).unwrap_or(4));
     
     // Divide work among threads
@@ -130,6 +145,7 @@ fn run_sa_parallel(
                     step_size,
                     num_steps,
                     bounds,
+                    objective_fn,
                 );
                 
                 local_costs.push(curr_cost);
