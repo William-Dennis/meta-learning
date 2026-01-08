@@ -7,14 +7,6 @@ This is a clean, standalone implementation that can be used as a reference.
 import numpy as np
 
 
-def rastrigin_2d(x, y):
-    """2D Rastrigin function
-    TODO: make adjustable"""
-    scale = 1.5
-    x = x / scale
-    y = y / scale
-    return 20 + x**2 - 10 * np.cos(2 * np.pi * x) + y**2 - 10 * np.cos(2 * np.pi * y)
-
 
 def run_sa(
     init_temp, cooling_rate, step_size, num_steps, bounds, seed=None, num_runs=10
@@ -44,11 +36,11 @@ def run_sa(
     return avg_reward, costs, last_trajectory, median_idx
 
 
-def _run_single_sa(init_temp, cooling_rate, step_size, num_steps, bounds, np_random):
+def _run_single_sa(init_temp, cooling_rate, step_size, num_steps, bounds, np_random, function):
     """Run single SA optimization."""
     curr_x = np_random.uniform(bounds[0], bounds[1])
     curr_y = np_random.uniform(bounds[0], bounds[1])
-    curr_cost = rastrigin_2d(curr_x, curr_y)
+    curr_cost = function(curr_x, curr_y)
     best_cost = curr_cost
     curr_temp = init_temp
 
@@ -81,6 +73,7 @@ def _sa_step(
     cooling_rate,
     bounds,
     np_random,
+    function,
 ):
     """Execute one SA step."""
     dx = np_random.normal(0, step_size)
@@ -88,7 +81,7 @@ def _sa_step(
 
     cand_x = np.clip(curr_x + dx, bounds[0], bounds[1])
     cand_y = np.clip(curr_y + dy, bounds[0], bounds[1])
-    cand_cost = rastrigin_2d(cand_x, cand_y)
+    cand_cost = function(cand_x, cand_y)
 
     if _accept_move(curr_cost, cand_cost, curr_temp, np_random):
         curr_x, curr_y, curr_cost = cand_x, cand_y, cand_cost
