@@ -40,17 +40,31 @@ def run_sa(
 ):
     """Run Simulated Annealing algorithm (Rust parallel version).
     
-    Note: The Rust implementation currently only supports rastrigin_2d.
-    If a different function is provided, this will raise an error.
+    Supports both rastrigin_2d and quadratic_2d objective functions.
+    
+    Args:
+        init_temp: Initial temperature
+        cooling_rate: Temperature decay rate per step
+        step_size: Standard deviation for random walk
+        num_steps: Total number of SA iterations
+        bounds: (min, max) bounds for search space
+        seed: Random seed (optional)
+        num_runs: Number of SA runs to average over
+        num_threads: Number of parallel threads (optional)
+        function: Objective function to optimize (optional, defaults to rastrigin_2d)
     """
+    # Determine function name to pass to Rust
+    function_name = None
     if function is not None:
-        # Check if it's the rastrigin function by name
-        function_name = getattr(function, '__name__', None)
-        if function_name != 'rastrigin_2d':
-            raise NotImplementedError(
-                f"Rust parallel implementation currently only supports rastrigin_2d, "
-                f"but received '{function_name}'. "
-                f"To use a different objective function, set ALGORITHM='python_serial' in core/sa_config.py"
+        fn_name = getattr(function, '__name__', None)
+        if fn_name == 'rastrigin_2d':
+            function_name = "rastrigin"
+        elif fn_name == 'quadratic_2d':
+            function_name = "quadratic"
+        else:
+            raise ValueError(
+                f"Rust parallel implementation only supports rastrigin_2d and quadratic_2d, "
+                f"but received '{fn_name}'."
             )
     
     if isinstance(bounds, list):
@@ -65,4 +79,5 @@ def run_sa(
         int(seed) if seed is not None else None,
         int(num_runs),
         int(num_threads) if num_threads is not None else None,
+        function_name,
     )
