@@ -14,5 +14,5 @@ pub fn rastrigin_2d(x: f64, y: f64) -> f64 {
 /// Simple 2D quadratic function: z = x^2 + y^2
 #[inline]
 pub fn quadratic_2d(x: f64, y: f64) -> f64 {
-    x.powi(2) + y.powi(2)
+    x * x + y * y
 }
