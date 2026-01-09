@@ -2,27 +2,53 @@
 
 import numpy as np
 from datetime import datetime
-from core.sa_config import get_run_sa
+from core.sa_config import get_run_sa, get_objective_function
 
 
-def run_single_config(init_temp, cooling_rate, step_size, num_steps):
-    """Run SA with specific hyperparameters."""
+def run_single_config(
+    init_temp, cooling_rate, step_size, num_steps, objective_function=None
+):
+    """Run SA with specific hyperparameters.
+
+    Args:
+        init_temp: Initial temperature
+        cooling_rate: Cooling rate
+        step_size: Step size
+        num_steps: Number of steps
+        objective_function: The objective function to optimize (default: rastrigin_2d)
+    """
     bounds = [-5.12, 5.12]
     seed = 42
     num_runs = 10
 
     run_sa = get_run_sa()
     avg_reward, costs, _, _ = run_sa(
-        init_temp, cooling_rate, step_size, num_steps, bounds, seed, num_runs
+        init_temp,
+        cooling_rate,
+        step_size,
+        num_steps,
+        bounds,
+        seed,
+        num_runs,
+        function=objective_function,
     )
 
     return np.mean(costs), np.std(costs)
 
 
-def process_config(temp, cool, step, count, total):
-    """Process a single configuration."""
+def process_config(temp, cool, step, count, total, objective_function=None):
+    """Process a single configuration.
+
+    Args:
+        temp: Initial temperature
+        cool: Cooling rate
+        step: Step size
+        count: Current iteration count
+        total: Total iterations
+        objective_function: The objective function to optimize (default: rastrigin_2d)
+    """
     mean_cost, std_cost = run_single_config(
-        temp, cool, step, 100
+        temp, cool, step, 100, objective_function=objective_function
     )  # fix num_steps to 100
 
     result = {
@@ -42,8 +68,12 @@ def process_config(temp, cool, step, count, total):
     return result, mean_cost
 
 
-def grid_search():
-    """Run grid search over SA hyperparameters."""
+def grid_search(objective_function=None):
+    """Run grid search over SA hyperparameters.
+
+    Args:
+        objective_function: The objective function to optimize (default: rastrigin_2d)
+    """
     print("Running grid search...")
 
     temp_values = [1.0, 10.0, 50.0]
@@ -61,7 +91,14 @@ def grid_search():
         for cool in cooling_values:
             for step in step_values:
                 count += 1
-                result, mean_cost = process_config(temp, cool, step, count, total)
+                result, mean_cost = process_config(
+                    temp,
+                    cool,
+                    step,
+                    count,
+                    total,
+                    objective_function=objective_function,
+                )
 
                 results.append(result)
 
@@ -103,7 +140,13 @@ def main():
     print(f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 60 + "\n")
 
-    best_params, best_cost, results = grid_search()
+    # Choose which objective function to optimize
+    # Options: "rastrigin" or "quadratic"
+    objective_function_name = "rastrigin"
+    objective_function = get_objective_function(objective_function_name)
+    print(f"Using objective function: {objective_function_name}\n")
+
+    best_params, best_cost, results = grid_search(objective_function=objective_function)
 
     print("\n" + "=" * 60)
     print("Best Configuration Found:")
